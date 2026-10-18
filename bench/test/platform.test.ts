@@ -2,9 +2,13 @@
 // Linux, Windows and macOS.
 import test from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import os from "node:os";
-import { freshDirectoryVariables, measure, osName, power, timingPrerequisites } from "../bench/platform.ts";
-import { capture } from "../bench/system.ts";
+import path from "node:path";
+import { projectDir, projects } from "../config.ts";
+import { leakingNodeModules } from "../preflight.ts";
+import { freshDirectoryVariables, measure, osName, power, timingPrerequisites } from "../platform.ts";
+import { capture } from "../system.ts";
 
 const canTime = timingPrerequisites().length === 0;
 const node = (code: string) => [process.execPath, "-e", code];
@@ -42,4 +46,13 @@ test("power reports a source and a charge", () => {
 test("the OS has a name and fresh-directory variables", () => {
 	assert.ok(osName().length > 3, osName());
 	assert.ok(freshDirectoryVariables().length >= 3);
+});
+
+test("preflight finds node_modules above a checkout, and none above the real projects", () => {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "bench-leak-"));
+	fs.mkdirSync(path.join(root, "node_modules"));
+	fs.mkdirSync(path.join(root, "projects", "p"), { recursive: true });
+	assert.deepEqual(leakingNodeModules([path.join(root, "projects", "p")]).filter(d => d.startsWith(fs.realpathSync(root)) || d.startsWith(root)), [path.join(root, "node_modules")]);
+	fs.rmSync(root, { recursive: true, force: true });
+	assert.deepEqual(leakingNodeModules(projects.map(projectDir)), []);
 });

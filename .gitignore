@@ -1,14 +1,11 @@
-# Project checkouts, created by bench/setup-projects.sh at the SHAs in bench/lib.sh
+# Project checkouts, created by node bench setup at the commits in projects.json
 /projects/
 
-# Installed checkers and fixture dependencies; each has a committed package-lock.json
+# Installed checkers and the harness's dev dependencies; each has a committed package-lock.json
 node_modules/
-
-# strings(1) dumps of the checker binaries, regenerable from the hashed binaries
-/results/archive/exploratory/extra/strings.*.txt
-
-# Logs here are raw results; track them even where a global ignore excludes *.log
-!*.log
 
 # Smoke runs (node bench run --smoke)
 /results/.smoke/
+
+# Raw results can include .log files; track them even where a global ignore excludes *.log
+!*.log

@@ -1,6 +1,6 @@
 # ts-checker-bench
 
-How fast and how correct are the TypeScript type checkers? This benchmark runs a cold, full-program type check of real projects with every checker, on the same machine, in the same session. It compares their speed, memory and diagnostics with Microsoft's tsgo, and publishes the raw output behind every number.
+How fast are the TypeScript type checkers, and how do their diagnostics compare with tsgo's? This benchmark runs a cold, full-program type check of real projects with every checker, on the same machine, in the same session. It compares their speed, memory and diagnostics with Microsoft's tsgo, and publishes the raw output behind every number.
 
 New checker or new version? Edit one line in [`checkers.json`](checkers.json) and run the benchmark ([below](#add-a-checker-or-a-version)).
 
@@ -12,7 +12,7 @@ New checker or new version? Edit one line in [`checkers.json`](checkers.json) an
 No published run yet.
 <!-- results:end -->
 
-How to read these: each checker runs at its own default threading in the first table, and those defaults differ ([details](docs/METHOD.md#threads)). tsc-rs and tsrs port TypeScript 7.1-dev, not 7.0.2; the "explain" checker, upstream tsgo 7.1-dev, shows which of their diagnostic differences come from TypeScript 7.1 itself. Method, caveats and what the numbers do not show: [`docs/METHOD.md`](docs/METHOD.md).
+How to read these: every checker runs with its shipped defaults, plus only the project's own typecheck arguments. No tuning flags are used: not tsrs's `--checkerAssignment go`, and not tsc-rs's `--fast`. The first table uses each checker's default threading, and those defaults differ; the single-threaded table sets one thread with each checker's documented flag ([details](docs/METHOD.md#threads)). tsc-rs and tsrs port TypeScript 7.1-dev, not 7.0.2; the "explain" checker, upstream tsgo 7.1-dev, shows which of their diagnostic differences come from TypeScript 7.1 itself. Method, caveats and what the numbers do not show: [`docs/METHOD.md`](docs/METHOD.md).
 
 ## Checkers and projects
 
@@ -28,8 +28,8 @@ How to read these: each checker runs at its own default threading in the first t
 | Project | Why |
 |---|---|
 | [type-fest](https://github.com/sindresorhus/type-fest) | Type-level library; heavy conditional types in its own test suite |
-| [outline](https://github.com/outline/outline) | A product web app, about 2,300 TypeScript files |
-| [VS Code](https://github.com/microsoft/vscode) | A large product, about 10,600 TypeScript files |
+| [outline](https://github.com/outline/outline) | A product web app, about 2,300 TypeScript files outside `node_modules` |
+| [VS Code](https://github.com/microsoft/vscode) | A large product, about 10,600 TypeScript files in `src/` |
 
 Each project is pinned to a commit, installed with its own lockfile and checked with its own typecheck command ([`projects.json`](projects.json)). A project is benchmarked only if tsgo reports 0 errors on it; [excalidraw](https://github.com/excalidraw/excalidraw) is in the list and rejected by that rule, because TypeScript 7 removed its `baseUrl` option.
 
@@ -38,11 +38,11 @@ Each project is pinned to a commit, installed with its own lockfile and checked 
 Runs on macOS, Linux (glibc) and Windows, on x64 and arm64. Requires Node ≥ 22.18 and git. On Linux it also needs GNU time; installing VS Code has its own build prerequisites. [`AGENTS.md`](AGENTS.md) has the full list and the exact steps, written so that a person or an agent can follow them on a new machine.
 
 ```sh
-npm ci && npm run check # the harness's own typecheck and tests
+(cd bench && npm ci && npm run check)   # the harness's own typecheck and tests
 node bench setup        # every checker into tools/, every project into projects/ (about 10 GB)
 node bench preflight    # plugged in? anything busy?
 node bench run --smoke  # about 8 minutes: end-to-end check into results/.smoke/ (not published)
-node bench run          # about 50 minutes; writes results/<date>-<cpu>-<os>/
+node bench run          # about an hour; writes results/<date>-<cpu>-<os>/
 ```
 
 `node bench run` keeps the machine awake (caffeinate, systemd-inhibit or SetThreadExecutionState), stops if it leaves AC power, and writes the run's report and this README's results block at the end. `node bench run --dry-run` prints every command it would run.

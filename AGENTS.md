@@ -20,8 +20,7 @@ Supported platforms: `darwin-arm64`, `darwin-x64`, `linux-arm64`, `linux-x64` (g
 
 ```sh
 git clone <this repository> && cd ts-checker-bench
-npm ci                      # TypeScript and Node types for the harness's own checks
-npm run check               # typecheck, tests, and the committed reports: must pass
+(cd bench && npm ci && npm run check)   # the harness's typecheck, tests and the committed reports: must pass
 node bench setup            # every checker into tools/, every project into projects/
 ```
 
@@ -47,13 +46,14 @@ It must end with `wrote results/.smoke/<time>/report.md`. Open that report and c
 ## 5. Run
 
 ```sh
-node bench run              # about 50 minutes on a 10-core machine; longer on slower ones
+node bench run              # about an hour on a 10-core Mac; longer on slower machines, and on Windows,
+                            # where each measurement also starts PowerShell (outside the measured time)
 ```
 
 Leave the machine alone for the whole run. The run writes `results/<date>-<cpu>-<os>/`, its `report.md`, and the README results block. It stops by itself if the machine leaves AC power.
 
 ## 6. Hand back
 
-1. `npm run check` must pass.
+1. `(cd bench && npm run check)` must pass.
 2. Commit only the new `results/<date>-<cpu>-<os>/` folder and the README change, on a branch, and open a pull request. Do not commit `projects/`, `node_modules/` or `results/.smoke/`.
 3. In the pull request, paste the "Conditions" section of the run's `report.md` and every preflight warning. Also include anything unusual: a checker that crashed, a gate that failed, or a step that needed a retry.

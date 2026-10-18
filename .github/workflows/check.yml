@@ -27,7 +27,10 @@ jobs:
         if: runner.os == 'Linux'
         run: command -v /usr/bin/time || (sudo apt-get update && sudo apt-get install -y time)
       - run: npm ci
+        working-directory: bench
       - run: npm run typecheck
+        working-directory: bench
       - run: npm test
+        working-directory: bench
       - name: Reports match the raw results
         run: node bench report --check

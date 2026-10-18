@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import * as config from "../bench/config.ts";
+import * as config from "../config.ts";
 
 test("exactly one reference checker", () => {
 	assert.equal(config.checkers.filter(c => c.role === "reference").length, 1);
@@ -27,7 +27,8 @@ test("thread flags substitute n, use the single-thread flag for 1, and are null 
 	assert.deepEqual(config.threadFlags(config.checker("tsgo"), 4), ["--checkers", "4"]);
 	assert.deepEqual(config.threadFlags(config.checker("tsgo"), 1), ["--singleThreaded"]);
 	assert.deepEqual(config.threadFlags(config.checker("bun"), 10), ["--threads=10"]);
-	assert.equal(config.threadFlags(config.checker("tsrs"), 4), null);
+	assert.deepEqual(config.threadFlags(config.checker("tsrs"), 4), ["--checkers", "4"]);
+	assert.equal(config.threadFlags(config.checker("tsgo-7.1-dev"), 4), null);
 });
 
 test("every checker names its binary for macOS, Linux and Windows on x64 and arm64, or is known to lack one", () => {

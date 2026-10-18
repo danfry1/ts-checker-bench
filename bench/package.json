@@ -1,4 +1,21 @@
 {
+  "name": "ts-checker-bench",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Speed, memory and diagnostics of TypeScript type checkers on real projects, with the raw output behind every number",
+  "license": "MIT",
   "type": "module",
-  "main": "index.ts"
+  "main": "index.ts",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "test": "node --test \"test/*.test.ts\"",
+    "check": "npm run typecheck && npm test && node . report --check"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "typescript": "7.0.2"
+  }
 }

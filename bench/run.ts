@@ -67,6 +67,26 @@ function describe(pl: Plan): void {
 	}
 }
 
+/**
+ * Makes recorded output independent of the machine: absolute paths to a project checkout
+ * become relative to it, other paths in this repository become relative to it (e.g. a
+ * checker's bundled libs, tools/<name>/...), and the home directory becomes "~". Applied the
+ * same way to every checker's output, so comparisons between checkers are unaffected.
+ */
+export function scrub(text: string, projectRoot?: string): string {
+	const bases: [string, string][] = [];
+	const variants = (dir: string) => {
+		const real = fs.existsSync(dir) ? fs.realpathSync(dir) : dir;
+		return [...new Set([dir, real, dir.replaceAll("\\", "/"), real.replaceAll("\\", "/")])];
+	};
+	if (projectRoot) for (const v of variants(projectRoot)) bases.push([v + path.sep, ""], [v + "/", ""]);
+	for (const v of variants(ROOT)) bases.push([v + path.sep, ""], [v + "/", ""]);
+	for (const v of variants(os.homedir())) bases.push([v, "~"]);
+	let out = text;
+	for (const [from, to] of bases.sort((a, b) => b[0].length - a[0].length)) out = out.replaceAll(from, to);
+	return out;
+}
+
 /** Writes a run's files: timing.csv row by row, run.json, and raw output. */
 class Recorder {
 	readonly dir: string;
@@ -83,12 +103,13 @@ class Recorder {
 	}
 
 	save(): void {
-		fs.writeFileSync(path.join(this.dir, "run.json"), JSON.stringify(this.meta, null, 2) + "\n");
+		fs.writeFileSync(path.join(this.dir, "run.json"), scrub(JSON.stringify(this.meta, null, 2)) + "\n");
 	}
 
-	write(file: string, content: string): void {
+	/** Writes raw output for project p (or for no project), with paths made relative by scrub(). */
+	write(file: string, content: string, p?: Project): void {
 		fs.mkdirSync(path.dirname(path.join(this.dir, file)), { recursive: true });
-		fs.writeFileSync(path.join(this.dir, file), content);
+		fs.writeFileSync(path.join(this.dir, file), scrub(content, p && projectDir(p)));
 	}
 
 	/** One timed run; stops the whole run if the machine is not on AC power. */
@@ -109,7 +130,7 @@ function startMeta(pl: Plan, pre: Preflight, keptAwakeBy: string | null): RunMet
 		node: process.version,
 		iterations: pl.iterations,
 		threadCounts: pl.threadCounts,
-		preflight: pre,
+		preflight: { blocking: pre.blocking, warnings: pre.warnings, power: pre.power },
 		loadAtStart: loadAverage(),
 		keptAwakeBy,
 		environment: Object.fromEntries(Object.entries(process.env).filter((e): e is [string, string] => TOOL_ENV.test(e[0]) && e[1] !== undefined)),
@@ -137,7 +158,7 @@ function recordHelp(rec: Recorder): void {
 /** The reference checker must report 0 errors; returns whether the project passed. */
 function gate(rec: Recorder, p: Project): boolean {
 	const r = runChecker(reference, p);
-	rec.write(`gate/${p.name}.txt`, r.output);
+	rec.write(`gate/${p.name}.txt`, r.output, p);
 	const errors = (r.output.match(/error TS\d+/g) ?? []).length;
 	rec.meta.projects.push({ name: p.name, repo: p.repo, sha: git(projectDir(p), "rev-parse", "HEAD"), args: p.args, argsSource: p.argsSource, gate: { exit: r.exit, errors } });
 	rec.save();
@@ -146,7 +167,7 @@ function gate(rec: Recorder, p: Project): boolean {
 }
 
 function fileLists(rec: Recorder, p: Project): void {
-	for (const c of runnable()) rec.write(`files/${p.name}/${c.name}.txt`, runChecker(c, p, c.fileList.args).output);
+	for (const c of runnable()) rec.write(`files/${p.name}/${c.name}.txt`, runChecker(c, p, c.fileList.args).output, p);
 }
 
 /** Diagnostics of every checker, clean and with the project's patch applied, twice each. */
@@ -162,7 +183,7 @@ function diagnostics(rec: Recorder, p: Project): void {
 			for (const c of [...runnable(), ...explainers.filter(availableHere)]) {
 				for (const n of [1, 2]) {
 					const r = runChecker(c, p, c.plainOutput);
-					rec.write(`parity/${p.name}/${state}.${c.name}${n === 2 ? ".run2" : ""}.txt`, r.output);
+					rec.write(`parity/${p.name}/${state}.${c.name}${n === 2 ? ".run2" : ""}.txt`, r.output, p);
 					exits.push(`${state},${c.name},${n},${r.exit}`);
 				}
 			}

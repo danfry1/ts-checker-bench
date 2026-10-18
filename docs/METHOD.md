@@ -4,7 +4,7 @@ What a run measures, how, and what it does not show. The numbers are in each run
 
 ## A run
 
-`node bench run` does the following, writing everything to `results/<date>-<cpu>/`:
+`node bench run` does the following, writing everything to `results/<date>-<cpu>-<os>/`:
 
 1. **Preflight.** It refuses to start on battery, with a checker or project missing, or with a project checkout that has local changes. It warns about busy processes, a high load average or a CPU speed limit, and records the warnings in `run.json`.
 2. **Records the setup.** It writes the machine, macOS and Node versions, each checker's package, `--version` output and native binary sha256, and tool-related environment variables to `run.json`. Each checker's `--help` output goes to `help/`.
@@ -14,7 +14,7 @@ What a run measures, how, and what it does not show. The numbers are in each run
    3. **Diagnostics.** Every checker, plus the explain-only checker, runs twice on the clean checkout and twice with `fixtures/patches/<project>.patch` applied. The checkout is restored with `git checkout` afterwards (`parity/`).
    4. **Cold check.** Each timed checker runs 3 times in the normal environment, alternating with 3 runs under fresh, empty `HOME`, `TMPDIR` and `XDG_CACHE_HOME`. Any file written to those directories is recorded.
    5. **Default threading.** 1 warm-up round, then 7 rounds. Each round runs every timed checker once, in a fixed order, with no thread flag.
-   6. **Matched threads.** The same, at 1, 4 and the CPU count threads, for checkers that document a thread flag.
+   6. **Matched threads.** The same, at 1, 4 and the CPU count threads, for checkers that document a thread flag (all five).
 4. **Records the conditions.** It writes the end time, load average, power state, and every sleep, wake, thermal or power event `pmset` logged during the run.
 5. **Reports.** It writes `report.md` and the README results block.
 
@@ -41,15 +41,17 @@ Each checker's native executable is run directly. Its path for each platform is 
 
 ## Threads
 
-Thread flags come only from each checker's own `--help` and README. They are recorded per checker in [`checkers.json`](../checkers.json), and each run saves the `--help` output it relied on.
+Every checker runs with its shipped defaults plus the project's own typecheck arguments. No tuning flags are used, such as tsrs's `--checkerAssignment go` or tsc-rs's `--fast`. Thread flags come from each checker's own documentation: its `--help`, its README, or the docs that README links to. They are recorded per checker in [`checkers.json`](../checkers.json), and each run saves the `--help` output of the installed binaries.
 
-| Checker | Default, as documented | Flag used |
-|---|---|---|
-| tsgo | Not stated in its `--help`. The tsc-ts README gives tsgo's default as 4 checkers. | `--singleThreaded`, `--checkers N` |
-| tsc-ts | "one checker per CPU it may run on (up to 16), and at least tsgo's four", fewer if memory is short (tsc-ts README) | `--singleThreaded`, `--checkers N` |
-| tsc-rs | Not documented | `--singleThreaded`, `--checkers N` |
-| tsrs | Not documented | None documented, so it is not in the matched-thread runs |
-| bun check | "one per CPU core" (`bun check --help`) | `--threads=N` |
+| Checker | Default, as documented | Thread flags used | Source |
+|---|---|---|---|
+| tsgo | Not stated in its `--help`. tsc-ts's and tsc-rs's READMEs both give tsgo's default as 4 checkers. | `--singleThreaded`, `--checkers N` | `tsc --help --all`; the tsc-ts and tsc-rs READMEs |
+| tsc-ts | "one checker per CPU it may run on (up to 16), and at least tsgo's four", fewer if memory is short | `--singleThreaded`, `--checkers N` | tsc-ts README |
+| tsc-rs | 4 checkers, as tsgo. Stated in the project's GitHub README (for 0.6.0: "`--checkers 8` (Go's option; the default is 4)"); 0.7.0's own README and `--help` do not state it. Its opt-in `--fast` mode, which raises the count, is not used. | `--singleThreaded`, `--checkers N` | `tsc --help --all`; [pingdotgg/ts-rust](https://github.com/pingdotgg/ts-rust) README |
+| tsrs | "every core up to 16, then at least 16 or half the cores, at most 32 checkers, capped for small programs" | `--singleThreaded`, `--checkers N` | [docs/COMPATIBILITY.md](https://github.com/oxc-project/tsrs/blob/main/docs/COMPATIBILITY.md); its `--help` refers to tsc's options for `--checkers` |
+| bun check | "one per CPU core" | `--threads=N` | `bun check --help` |
+
+Every flag was checked against the installed binary, which rejects unknown options with TS5023. For tsrs, which documents its flags least directly, `--singleThreaded` and `--checkers 1` each brought its CPU time down to its wall time on type-fest.
 
 So the default-threading table compares each checker as it ships, and those defaults differ. The matched-thread tables are the closer comparison, but `--checkers N` sets the number of type checkers while bun's `--threads=N` sets threads. They are the closest documented equivalents, not the same setting.
 
@@ -59,7 +61,7 @@ So the default-threading table compares each checker as it ships, and those defa
 
 ## Diagnostics
 
-Each output is compared with the reference checker's in two ways:
+Recorded output has its absolute paths made machine-independent, the same way for every checker (see [`results/README.md`](../results/README.md)). Each output is then compared with the reference checker's in two ways:
 
 - **Byte for byte.**
 - **Normalised** ([`normalizeDiagnostics`](../bench/analysis.ts)). Each diagnostic becomes one `path:line:col TSnnnn message` line, sorted. Indented elaboration lines are dropped, and so is bun's success line and summary. "Same after normalising" therefore means the same errors, at the same places, with the same top-level messages.

@@ -16,5 +16,6 @@
     "types": ["node"],
     "skipLibCheck": false
   },
-  "include": ["bench/**/*.ts", "test/**/*.ts"]
+  "include": ["**/*.ts"],
+  "exclude": ["node_modules"]
 }

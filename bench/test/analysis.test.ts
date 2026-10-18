@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import * as a from "../bench/analysis.ts";
+import * as a from "../analysis.ts";
 
 const run = (real: number, power = "AC") => ({ real, user: 1, sys: 0.5, maxrss: 2 ** 20, exit: 0, power });
 

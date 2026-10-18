@@ -95,16 +95,19 @@ const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
  * separator and line endings.
  */
 export function normalizeFileList(text: string, projectName: string): string[] {
-	const inProject = new RegExp(`^.*/projects/${escapeRegExp(projectName)}/`);
-	const bundledLib = /^.*\/tools\/[^/]+\/node_modules\/.*\/(lib\.[^/]*\.d\.ts)$/;
+	// Recorded lists are relative (see scrub in run.ts); absolute paths are accepted too.
+	const inProject = new RegExp(`^(.*/)?projects/${escapeRegExp(projectName)}/`);
+	const bundledLib = /^(.*\/)?tools\/[^/]+\/node_modules\/.*\/(lib\.[^/]*\.d\.ts)$/;
 	return text
 		.split(/\r?\n/)
 		.filter(Boolean)
 		.map(raw => raw.replaceAll("\\", "/"))
 		.map(line => {
 			const lib = bundledLib.exec(line);
-			if (lib) return `LIB/${lib[1]}`;
+			if (lib) return `LIB/${lib[2]}`;
 			if (inProject.test(line)) return line.replace(inProject, "");
+			// Already relative to the checkout; anything absolute is outside the project.
+			if (!line.startsWith("/") && !/^[A-Za-z]:\//.test(line) && !line.startsWith("..")) return line;
 			throw new Error(`path outside the project and the checkers' libs: ${line}`);
 		})
 		.sort();

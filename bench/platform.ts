@@ -149,13 +149,19 @@ export function osEvents(startIso: string, endIso: string): { source: string; ev
 		const events = output("pmset", ["-g", "log"])
 			.split("\n")
 			.filter(l => l.slice(0, 19) >= from && l.slice(0, 19) <= to)
-			.filter(l => /Entering Sleep|Wake from|DarkWake|ThermalEvent|BatteryHealth|chimeOnAttach/.test(l));
+			.filter(l => /Entering Sleep|Wake from|DarkWake|ThermalEvent|BatteryHealth/.test(l))
+			.map(l => l.replace(/\s+/g, " ").trim());
 		return { source: "pmset -g log", events };
 	}
 	if (platform === "linux") {
 		if (!has("journalctl")) throw new Error("journalctl not available");
 		const text = output("journalctl", ["--since", local(startIso), "--until", local(endIso), "-o", "short-iso", "--no-pager", "-q"]);
-		return { source: "journalctl", events: text.split("\n").filter(l => /suspend|hibernat|sleep|thermal|throttl/i.test(l)) };
+		// "<time> <host> <process>[pid]: <message>" -> "<time> <message>"
+		const events = text
+			.split("\n")
+			.filter(l => /suspend|hibernat|sleep|thermal|throttl/i.test(l))
+			.map(l => l.replace(/^(\S+) \S+ [^:]+: /, "$1 "));
+		return { source: "journalctl", events };
 	}
 	if (platform === "win32") {
 		const query = `Get-WinEvent -FilterHashtable @{LogName='System'; ProviderName='Microsoft-Windows-Kernel-Power','Microsoft-Windows-Kernel-Processor-Power'; StartTime='${startIso}'; EndTime='${endIso}'} -ErrorAction SilentlyContinue | Where-Object { $_.Id -in 41,42,107,37,55,506,507 } | ForEach-Object { "$($_.TimeCreated.ToString('s')) $($_.ProviderName) $($_.Id): $(($_.Message -split [Environment]::NewLine)[0])" }`;
@@ -172,13 +178,13 @@ export function cpuSpeedLimit(): string | null {
 }
 
 /** Processes using at least 15% CPU right now, where ps is available. */
-export function busyProcesses(): string[] | null {
+export function busyProcesses(): { name: string; cpu: number }[] | null {
 	if (platform === "win32") return null;
 	return output("ps", ["-Ao", "pcpu=,comm="])
 		.split("\n")
 		.map(l => /^\s*([\d.]+)\s+(.*)$/.exec(l))
 		.filter((m): m is RegExpExecArray => m !== null && Number(m[1]) >= 15 && !/WindowServer|kernel_task|\bps$|node$/.test(m[2]))
-		.map(m => `${path.basename(m[2])} (${m[1]}% CPU)`);
+		.map(m => ({ name: path.basename(m[2]), cpu: Number(m[1]) }));
 }
 
 // ---------------------------------------------------------------------------- environment and naming
