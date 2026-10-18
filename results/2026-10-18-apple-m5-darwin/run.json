@@ -1,0 +1,162 @@
+{
+  "name": "2026-10-18-apple-m5-darwin",
+  "started": "2026-10-18T22:39:24.865Z",
+  "machine": {
+    "cpu": "Apple M5",
+    "cpus": 10,
+    "memoryGiB": 24,
+    "os": "macOS 26.5.1 (25F80)",
+    "platform": "darwin-arm64"
+  },
+  "node": "v24.13.0",
+  "iterations": 7,
+  "threadCounts": [
+    1,
+    4,
+    10
+  ],
+  "preflight": {
+    "blocking": [],
+    "warnings": [
+      "1 busy process using 15% CPU or more (highest 26.5%)"
+    ],
+    "power": {
+      "source": "AC",
+      "charge": 100
+    }
+  },
+  "loadAtStart": "2.66 4.57 6.58",
+  "keptAwakeBy": "caffeinate",
+  "environment": {
+    "BUN_INSTALL": "~/.bun"
+  },
+  "checkers": [
+    {
+      "name": "tsgo",
+      "package": "typescript@7.0.2",
+      "role": "reference",
+      "available": true,
+      "versionOutput": "Version 7.0.2",
+      "binarySha256": "a82f731365ad69d5c4c15f5e18fba4584bf3b7b839960172a76c3462b5114bf2"
+    },
+    {
+      "name": "tsc-ts",
+      "package": "tsc-ts@0.0.3",
+      "role": "candidate",
+      "available": true,
+      "versionOutput": "Version 7.0.2",
+      "binarySha256": "b2a89e76dafa63ffece5e410d6c330ed58974ed14082788735dd9a2abfc43865"
+    },
+    {
+      "name": "tsc-rs",
+      "package": "tsc-rs@0.7.0",
+      "role": "candidate",
+      "available": true,
+      "versionOutput": "Version 7.1.0-dev",
+      "binarySha256": "23dd7b5cf77478cd6bc0f9ea40ce5807ecb69a4a4f4b16f4d1323becafb54cc7"
+    },
+    {
+      "name": "tsrs",
+      "package": "tsrs@0.16.0-ts7.1.0-dev.20260929",
+      "role": "candidate",
+      "available": true,
+      "versionOutput": "Version 7.1.0-dev.20260930.4 (tsrs 0.16.0-ts7.1.0-dev.20260929, microsoft/TypeScript@b85298b6a81f)",
+      "binarySha256": "c04e14af7538fd95272c40e4902d6048aa637cecd40cb3429b94f646e20ebceb"
+    },
+    {
+      "name": "bun",
+      "package": "bun@1.4.3",
+      "role": "candidate",
+      "available": true,
+      "versionOutput": "1.4.3",
+      "binarySha256": "28c7dd0a06916aba284d570ef44a2d70e9c538eaf2ba58dfe0910525563b3f79"
+    },
+    {
+      "name": "tsgo-7.1-dev",
+      "package": "typescript@7.1.0-dev.20260930.4",
+      "role": "explain",
+      "available": true,
+      "versionOutput": "Version 7.1.0-dev.20260930.4",
+      "binarySha256": "aa06f5318220fe61dce847ef5583f01ee17a250ca5565dbf46c259588fe97246"
+    }
+  ],
+  "projects": [
+    {
+      "name": "type-fest",
+      "repo": "https://github.com/sindresorhus/type-fest",
+      "sha": "b550b410e13ff6bf9e1467b863b6ebd120e70781",
+      "args": [
+        "-p",
+        ".",
+        "--noEmit"
+      ],
+      "argsSource": "package.json test:tsc (tsc on the repo tsconfig, which sets noEmit)",
+      "gate": {
+        "exit": 0,
+        "errors": 0
+      }
+    },
+    {
+      "name": "outline",
+      "repo": "https://github.com/outline/outline",
+      "sha": "ef7753dc57a6117475ba9703fa683593a68e1ae4",
+      "args": [
+        "-p",
+        ".",
+        "--incremental",
+        "false"
+      ],
+      "argsSource": ".github/workflows/ci.yml, job types: yarn tsc --incremental false",
+      "gate": {
+        "exit": 0,
+        "errors": 0
+      }
+    },
+    {
+      "name": "vscode",
+      "repo": "https://github.com/microsoft/vscode",
+      "sha": "4a82da11e45fee7aa77017b2188b6a394f994074",
+      "args": [
+        "-p",
+        "./src/tsconfig.json",
+        "--noEmit",
+        "--skipLibCheck"
+      ],
+      "argsSource": "package.json typecheck-client",
+      "gate": {
+        "exit": 0,
+        "errors": 0
+      }
+    },
+    {
+      "name": "excalidraw",
+      "repo": "https://github.com/excalidraw/excalidraw",
+      "sha": "4c37956ba5f04ec342a9d9d5891a38f22c5b7b4e",
+      "args": [
+        "-p",
+        "."
+      ],
+      "argsSource": "package.json test:typecheck",
+      "gate": {
+        "exit": 1,
+        "errors": 1
+      }
+    }
+  ],
+  "coldCheckVariables": [
+    "HOME",
+    "TMPDIR",
+    "XDG_CACHE_HOME"
+  ],
+  "coldCheckFilesWritten": [],
+  "ended": "2026-10-18T23:21:36.335Z",
+  "loadAtEnd": "11.19 7.88 6.44",
+  "powerAtEnd": {
+    "source": "AC",
+    "charge": 100
+  },
+  "osEvents": {
+    "source": "pmset -g log",
+    "events": []
+  }
+}
