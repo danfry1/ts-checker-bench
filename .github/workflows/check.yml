@@ -1,0 +1,33 @@
+# Typechecks the harness with typescript 7.0.2, runs the tests on Linux, Windows and macOS
+# (including the OS-specific timer and process code, on each OS), and checks that every
+# report and the README results block are exactly what the committed raw results produce.
+# The benchmark itself needs a quiet machine on AC power and is not run here.
+name: check
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: GNU time (Linux timer)
+        if: runner.os == 'Linux'
+        run: command -v /usr/bin/time || (sudo apt-get update && sudo apt-get install -y time)
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - name: Reports match the raw results
+        run: node bench report --check

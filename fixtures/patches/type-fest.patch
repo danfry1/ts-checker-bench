@@ -1,0 +1,78 @@
+diff --git a/test-d/camel-case.ts b/test-d/camel-case.ts
+index 4890de2..9e08c37 100644
+--- a/test-d/camel-case.ts
++++ b/test-d/camel-case.ts
+@@ -3,7 +3,7 @@ import type {CamelCase, PascalCase, Tagged} from '../index.d.ts';
+ 
+ // CamelCase
+ const camelFromPascal: CamelCase<'FooBar'> = 'fooBar';
+-expectTypeOf(camelFromPascal).toBe<'fooBar'>();
++expectTypeOf(camelFromPascal).toBe<'foo_bar'>();
+ 
+ const camelFromKebab: CamelCase<'foo-bar'> = 'fooBar';
+ expectTypeOf(camelFromKebab).toBe<'fooBar'>();
+diff --git a/test-d/merge-all.ts b/test-d/merge-all.ts
+index d90b9c8..774235a 100644
+--- a/test-d/merge-all.ts
++++ b/test-d/merge-all.ts
+@@ -17,7 +17,7 @@ type Baz = {
+ };
+ 
+ // Keys of later types override keys of earlier types.
+-expectTypeOf<MergeAll<[Foo, Bar, Baz]>>().toBe<{a: string; b: boolean; c: number; d: symbol}>();
++expectTypeOf<MergeAll<[Foo, Bar, Baz]>>().toBe<{a: string; b: boolean; c: number; d: string}>();
+ expectTypeOf<MergeAll<[Baz, Bar, Foo]>>().toBe<{a: string; b: number; c: string; d: symbol}>();
+ 
+ // Same as nesting `Merge`.
+diff --git a/test-d/partial-deep.ts b/test-d/partial-deep.ts
+index 1dc3ad3..0621319 100644
+--- a/test-d/partial-deep.ts
++++ b/test-d/partial-deep.ts
+@@ -35,7 +35,7 @@ let partialDeepFoo: PartialDeep<typeof foo, {recurseIntoArrays: true}> = foo;
+ // @ts-expect-error
+ expectTypeOf(partialDeepFoo).toBe<Partial<typeof foo>>();
+ const partialDeepBar: PartialDeep<typeof foo.bar, {recurseIntoArrays: true}> = foo.bar;
+-expectTypeOf(partialDeepFoo.bar).toBe<typeof partialDeepBar | undefined>();
++expectTypeOf(partialDeepFoo.bar).toBe<typeof partialDeepBar>();
+ // Check for constructor
+ expectTypeOf(partialDeepFoo.bar!.classConstructor).toBe<typeof ClassA | undefined>();
+ const instance = new partialDeepFoo.bar!.classConstructor!();
+diff --git a/test-d/paths.ts b/test-d/paths.ts
+index 99126db..171c7c2 100644
+--- a/test-d/paths.ts
++++ b/test-d/paths.ts
+@@ -3,7 +3,7 @@ import type {Get, NonNullableDeep, Paths, Subtract, Tagged, UnknownArray} from '
+ import type {MapsSetsOrArrays, NonRecursiveType} from '../source/internal/type.d.ts';
+ 
+ declare const normal: Paths<{foo: string}>;
+-expectTypeOf(normal).toBe<'foo'>();
++expectTypeOf(normal).toBe<'bar'>();
+ 
+ type DeepObject = {
+ 	a: {
+diff --git a/test-d/set-required.ts b/test-d/set-required.ts
+index debfc4f..c3a653b 100644
+--- a/test-d/set-required.ts
++++ b/test-d/set-required.ts
+@@ -3,7 +3,7 @@ import type {Except, SetRequired, Tagged} from '../index.d.ts';
+ 
+ // Update one required and one optional to required.
+ declare const variation1: SetRequired<{a?: number; b: string; c?: boolean}, 'b' | 'c'>;
+-expectTypeOf(variation1).toBe<{a?: number; b: string; c: boolean}>();
++expectTypeOf(variation1).toBe<{a: number; b: string; c: boolean}>();
+ 
+ // Update two optional to required.
+ declare const variation2: SetRequired<{a?: number; b?: string; c?: boolean}, 'a' | 'b'>;
+diff --git a/test-d/simplify.ts b/test-d/simplify.ts
+index c5a9e39..7714340 100644
+--- a/test-d/simplify.ts
++++ b/test-d/simplify.ts
+@@ -33,7 +33,7 @@ const valueAsSimplifiedInterface: Simplify<SomeInterface> = valueAsLiteral;
+ const valueAsInterface: SomeInterface = valueAsLiteral;
+ 
+ declare const a: Simplify<SomeInterface>;
+-expectTypeOf(a).toBe<SomeInterfaceAsTypeWrittenByHand>();
++expectTypeOf(a).toBe<{broken: true}>();
+ 
+ // Interface is assignable to its Simplified type (created with Simplify, and by hand)
+ expectTypeOf(valueAsInterface).toBe<Simplify<SomeInterface>>();

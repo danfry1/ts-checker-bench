@@ -1,0 +1,8 @@
+{
+  "name": "tool-tsc-rs",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "tsc-rs": "0.7.0"
+  }
+}

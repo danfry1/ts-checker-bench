@@ -1,0 +1,141 @@
+{
+  "$comment": "Every checker in the benchmark. To add one or change a version, edit this file and run `node bench setup`. Fields: package/version: what npm installs into tools/<name>/; binary: the native executable to run, per <platform>-<arch>, as a path under node_modules (a list means: the first that exists; a platform that is missing means the checker is not available there); args: arguments placed before the project's own; plainOutput: flags for one-line-per-error output; fileList: how to make it report the files in its program (format \"list\": one path per line; \"bun-timing\": counts only); threads: how to set a thread count ({n} is replaced), or null if the checker documents no thread flag; role: 'reference' is what every other checker is compared with, 'explain' is only used to explain diagnostic differences and is never timed. Thread flags are taken from each checker's own --help and README only.",
+  "checkers": [
+    {
+      "name": "tsgo",
+      "description": "Microsoft's native TypeScript 7 compiler (Go)",
+      "package": "typescript",
+      "version": "7.0.2",
+      "binary": {
+        "darwin-arm64": "@typescript/typescript-darwin-arm64/lib/tsc",
+        "darwin-x64": "@typescript/typescript-darwin-x64/lib/tsc",
+        "linux-arm64": "@typescript/typescript-linux-arm64/lib/tsc",
+        "linux-x64": "@typescript/typescript-linux-x64/lib/tsc",
+        "win32-arm64": "@typescript/typescript-win32-arm64/lib/tsc.exe",
+        "win32-x64": "@typescript/typescript-win32-x64/lib/tsc.exe"
+      },
+      "args": [],
+      "plainOutput": ["--pretty", "false"],
+      "fileList": {
+        "args": ["--listFilesOnly"],
+        "format": "list"
+      },
+      "threads": {
+        "one": ["--singleThreaded"],
+        "n": ["--checkers", "{n}"]
+      },
+      "role": "reference"
+    },
+    {
+      "name": "tsc-ts",
+      "description": "A TypeScript port of tsgo 7.0.2, compiled to a native executable with scriptc (Vercel Labs)",
+      "package": "tsc-ts",
+      "version": "0.0.3",
+      "binary": {
+        "darwin-arm64": "@tsc-ts/darwin-arm64/lib/tsc-ts",
+        "darwin-x64": "@tsc-ts/darwin-x64/lib/tsc-ts",
+        "linux-arm64": "@tsc-ts/linux-arm64-gnu/lib/tsc-ts",
+        "linux-x64": "@tsc-ts/linux-x64-gnu/lib/tsc-ts",
+        "win32-x64": "@tsc-ts/win32-x64-msvc/lib/tsc-ts.exe"
+      },
+      "args": [],
+      "plainOutput": ["--pretty", "false"],
+      "fileList": {
+        "args": ["--listFilesOnly"],
+        "format": "list"
+      },
+      "threads": {
+        "one": ["--singleThreaded"],
+        "n": ["--checkers", "{n}"]
+      }
+    },
+    {
+      "name": "tsc-rs",
+      "description": "A Rust port of the TypeScript 7 compiler (pingdotgg/ts-rust)",
+      "package": "tsc-rs",
+      "version": "0.7.0",
+      "binary": {
+        "darwin-arm64": "@tsc-rs/darwin-arm64/lib/tsc",
+        "darwin-x64": "@tsc-rs/darwin-x64/lib/tsc",
+        "linux-arm64": "@tsc-rs/linux-arm64/lib/tsc",
+        "linux-x64": "@tsc-rs/linux-x64/lib/tsc",
+        "win32-arm64": "@tsc-rs/win32-arm64/lib/tsc.exe",
+        "win32-x64": "@tsc-rs/win32-x64/lib/tsc.exe"
+      },
+      "args": [],
+      "plainOutput": ["--pretty", "false"],
+      "fileList": {
+        "args": ["--listFilesOnly"],
+        "format": "list"
+      },
+      "threads": {
+        "one": ["--singleThreaded"],
+        "n": ["--checkers", "{n}"]
+      }
+    },
+    {
+      "name": "tsrs",
+      "description": "A Rust port of the TypeScript 7 compiler (oxc-project)",
+      "package": "tsrs",
+      "version": "0.16.0-ts7.1.0-dev.20260929",
+      "binary": {
+        "darwin-arm64": "@tsrs/darwin-arm64/tsrs",
+        "linux-arm64": "@tsrs/linux-arm64-gnu/tsrs",
+        "linux-x64": "@tsrs/linux-x64-gnu/tsrs"
+      },
+      "args": [],
+      "plainOutput": ["--pretty", "false"],
+      "fileList": {
+        "args": ["--listFilesOnly"],
+        "format": "list"
+      },
+      "threads": null
+    },
+    {
+      "name": "bun",
+      "description": "Bun's built-in type checker (bun check)",
+      "package": "bun",
+      "version": "1.4.3",
+      "binary": {
+        "darwin-arm64": ["@oven/bun-darwin-aarch64/bin/bun", "bun/bin/bun.exe"],
+        "darwin-x64": ["@oven/bun-darwin-x64/bin/bun", "bun/bin/bun.exe"],
+        "linux-arm64": ["@oven/bun-linux-aarch64/bin/bun", "bun/bin/bun.exe"],
+        "linux-x64": ["@oven/bun-linux-x64/bin/bun", "bun/bin/bun.exe"],
+        "win32-arm64": ["@oven/bun-windows-aarch64/bin/bun.exe", "bun/bin/bun.exe"],
+        "win32-x64": ["@oven/bun-windows-x64/bin/bun.exe", "bun/bin/bun.exe"]
+      },
+      "args": ["check"],
+      "plainOutput": ["--no-pretty", "--all"],
+      "fileList": {
+        "args": ["--timing"],
+        "format": "bun-timing"
+      },
+      "threads": {
+        "one": ["--threads=1"],
+        "n": ["--threads={n}"]
+      }
+    },
+    {
+      "name": "tsgo-7.1-dev",
+      "description": "Upstream tsgo 7.1-dev, the build tsrs reports porting",
+      "package": "typescript",
+      "version": "7.1.0-dev.20260930.4",
+      "binary": {
+        "darwin-arm64": "@typescript/typescript-darwin-arm64/lib/tsc",
+        "darwin-x64": "@typescript/typescript-darwin-x64/lib/tsc",
+        "linux-arm64": "@typescript/typescript-linux-arm64/lib/tsc",
+        "linux-x64": "@typescript/typescript-linux-x64/lib/tsc",
+        "win32-arm64": "@typescript/typescript-win32-arm64/lib/tsc.exe",
+        "win32-x64": "@typescript/typescript-win32-x64/lib/tsc.exe"
+      },
+      "args": [],
+      "plainOutput": ["--pretty", "false"],
+      "fileList": {
+        "args": ["--listFilesOnly"],
+        "format": "list"
+      },
+      "threads": null,
+      "role": "explain"
+    }
+  ]
+}

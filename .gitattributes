@@ -1,0 +1,6 @@
+# Keep every file byte for byte as committed, on every OS. Reports are compared with the
+# generator's output and raw checker output is compared byte for byte, so Windows checkouts
+# must not convert line endings.
+* text=auto eol=lf
+# Raw results are stored exactly as the tools printed them, whatever OS produced them.
+results/** -text

@@ -1,0 +1,8 @@
+{
+  "name": "tool-tsgo",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "typescript": "7.0.2"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "tool-tsrs",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "tsrs": "0.16.0-ts7.1.0-dev.20260929"
+  }
+}

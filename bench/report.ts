@@ -1,0 +1,319 @@
+// node bench report: builds results/<run>/report.md from a run's raw files, and the README
+// block between <!-- results:start --> and <!-- results:end --> from the latest run.
+// With check, writes nothing and fails if either is out of date.
+import fs from "node:fs";
+import path from "node:path";
+import { RESULTS_DIR, ROOT, checkers as configured } from "./config.ts";
+import { type Summary, countFiles, lineDiff, maskElapsed, normalizeDiagnostics, normalizeFileList, parseBunTiming, ratio, summarize } from "./analysis.ts";
+import { type Run, listRuns, loadRun } from "./results.ts";
+
+const README = path.join(ROOT, "README.md");
+const START = "<!-- results:start -->";
+const END = "<!-- results:end -->";
+const DIFF_LEGEND = "+n / −m: after normalising, n diagnostics only in that checker and m only in the reference. Every difference is listed verbatim in the run's report.";
+
+/** Summary of the timed runs (not warm-ups) for one project, phase, checker and thread setting. */
+export function stat(run: Run, project: string, phase: string, checker: string, threads: string | number = "default"): Summary | null {
+	const rows = run.rows.filter(r => r.project === project && r.phase === phase && r.checker === checker && r.threads === String(threads) && r.iteration !== "warm");
+	return rows.length ? summarize(rows) : null;
+}
+
+const range = (s: Summary) => `${s.median.toFixed(2)} (${s.min.toFixed(2)}–${s.max.toFixed(2)})`;
+const benchmarked = (run: Run) => run.meta.projects.filter(p => p.gate.exit === 0).map(p => p.name);
+const timedNames = (run: Run) => run.meta.checkers.filter(c => c.role !== "explain" && c.available !== false).map(c => c.name);
+const unavailableNote = (run: Run) => {
+	const missing = run.meta.checkers.filter(c => c.available === false).map(c => c.name);
+	return missing.length ? [`Not available on ${run.meta.machine.platform}: ${missing.join(", ")} (no published build).`, ""] : [];
+};
+const availableNames = (run: Run) => run.meta.checkers.filter(c => c.available !== false).map(c => c.name);
+const referenceName = (run: Run) => run.meta.checkers.find(c => c.role === "reference")!.name;
+const hasThreadFlag = (name: string) => Boolean(configured.find(c => c.name === name)?.threads);
+
+// ---------------------------------------------------------------------------- diagnostics
+
+export interface ParityResult {
+	state: string;
+	checker: string;
+	errors: number;
+	/** Byte-identical to the reference's output. */
+	raw: boolean;
+	/** Identical to the reference's after normalising. */
+	normalized: boolean;
+	extra: string[];
+	missing: string[];
+	/** The second run reproduced the first. */
+	repeat: boolean;
+	exits: string[];
+}
+
+/** Compares every checker's diagnostics with the reference's, per state. */
+export function parity(run: Run, project: string): ParityResult[] {
+	const exits = (run.read("parity", project, "exits.csv") ?? "").trim().split("\n").slice(1).map(l => l.split(","));
+	const ref = referenceName(run);
+	const results: ParityResult[] = [];
+	for (const state of ["clean", "broken"]) {
+		const refText = run.read("parity", project, `${state}.${ref}.txt`);
+		if (refText === null) continue;
+		const refNorm = normalizeDiagnostics(refText);
+		for (const c of run.meta.checkers.filter(x => x.available !== false)) {
+			const text = run.read("parity", project, `${state}.${c.name}.txt`) ?? "";
+			const again = run.read("parity", project, `${state}.${c.name}.run2.txt`) ?? "";
+			const norm = normalizeDiagnostics(text);
+			const { onlyA: missing, onlyB: extra } = lineDiff(refNorm, norm);
+			results.push({
+				state,
+				checker: c.name,
+				errors: norm.length,
+				raw: text === refText,
+				normalized: missing.length === 0 && extra.length === 0,
+				extra,
+				missing,
+				repeat: maskElapsed(text) === maskElapsed(again),
+				exits: exits.filter(e => e[0] === state && e[1] === c.name).map(e => e[3]),
+			});
+		}
+	}
+	return results;
+}
+
+const verdict = (r: ParityResult | undefined) => (!r ? "–" : r.raw ? "byte-identical" : r.normalized ? "same after normalising" : `+${r.extra.length} / −${r.missing.length}`);
+
+// ---------------------------------------------------------------------------- files
+
+type FileResult =
+	| { checker: string; kind: "list"; total: number; lib: number; project: number; same: boolean; sameNonLib: boolean; onlyHere: string[]; onlyRef: string[] }
+	| { checker: string; kind: "counts"; counts: { loaded: number; checked: number } | null; sameCount: boolean };
+
+export function files(run: Run, project: string): FileResult[] {
+	const list = (name: string) => normalizeFileList(run.read("files", project, `${name}.txt`) ?? "", project);
+	const refList = list(referenceName(run));
+	const refNonLib = refList.filter(f => !f.startsWith("LIB/"));
+	return timedNames(run).map((name): FileResult => {
+		if (configured.find(c => c.name === name)?.fileList.format === "bun-timing") {
+			const counts = parseBunTiming(run.read("files", project, `${name}.txt`) ?? "");
+			return { checker: name, kind: "counts", counts, sameCount: counts?.loaded === refList.length };
+		}
+		const l = list(name);
+		const nonLib = l.filter(f => !f.startsWith("LIB/"));
+		return {
+			checker: name,
+			kind: "list",
+			...countFiles(l),
+			same: l.join("\n") === refList.join("\n"),
+			sameNonLib: nonLib.join("\n") === refNonLib.join("\n"),
+			onlyHere: l.filter(f => !refList.includes(f)),
+			onlyRef: refList.filter(f => !l.includes(f)),
+		};
+	});
+}
+
+// ---------------------------------------------------------------------------- tables
+
+function timingTable(run: Run, phase: string, threads: string | number, checkers: string[], ref: string): string {
+	const projects = benchmarked(run);
+	const lines = ["| Checker | " + projects.map(p => `${p} wall s | vs ${ref}`).join(" | ") + " |", "|---|" + projects.map(() => "---|---|").join("")];
+	for (const c of checkers) {
+		const cells = projects.map(p => {
+			const s = stat(run, p, phase, c, threads);
+			const r = stat(run, p, phase, ref, threads);
+			if (!s || !r) return "– | –";
+			const mark = s.exits.some(e => e !== 0) ? " ¹" : "";
+			return `${range(s)}${mark} | ${c === ref ? "1.0×" : ratio(r.median, s.median)}`;
+		});
+		lines.push(`| ${c} | ${cells.join(" | ")} |`);
+	}
+	return lines.join("\n");
+}
+
+function resourceTable(run: Run, checkers: string[]): string {
+	const projects = benchmarked(run);
+	const lines = ["| Checker | " + projects.map(p => `${p} user+sys s / peak MiB`).join(" | ") + " |", "|---|" + projects.map(() => "---|").join("")];
+	for (const c of checkers) {
+		const cells = projects.map(p => {
+			const s = stat(run, p, "default", c);
+			return s ? `${s.cpu.toFixed(2)} / ${s.rssMiB.toFixed(0)}` : "–";
+		});
+		lines.push(`| ${c} | ${cells.join(" | ")} |`);
+	}
+	return lines.join("\n");
+}
+
+function correctnessTable(run: Run): string {
+	const ref = referenceName(run);
+	const others = availableNames(run).filter(n => n !== ref);
+	const lines = [`| Project, state | ${ref} errors | ${others.join(" | ")} |`, `|---|---|${others.map(() => "---|").join("")}`];
+	for (const p of benchmarked(run)) {
+		const results = parity(run, p);
+		for (const state of ["clean", "broken"]) {
+			const refRow = results.find(r => r.state === state && r.checker === ref);
+			if (!refRow) continue;
+			lines.push(`| ${p}, ${state} | ${refRow.errors} | ${others.map(n => verdict(results.find(r => r.state === state && r.checker === n))).join(" | ")} |`);
+		}
+	}
+	return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------- report.md
+
+function reportMarkdown(run: Run): string {
+	const m = run.meta;
+	const ref = referenceName(run);
+	const checkers = timedNames(run);
+	const threaded = checkers.filter(hasThreadFlag);
+	const projects = benchmarked(run);
+	const out: string[] = [];
+	out.push(`# Run ${m.name}`, "");
+	if (m.note) out.push(`**Note:** ${m.note}`, "");
+	out.push(`${m.machine.cpu}, ${m.machine.cpus} CPUs, ${m.machine.memoryGiB} GiB, ${m.machine.os}, ${m.machine.platform}, Node ${m.node}. ${m.started} to ${m.ended ?? "(unfinished)"}.`, "");
+	out.push(`Generated by \`bench/report.ts\` from the files in this directory. Wall time: median of ${m.iterations} runs (min–max), after 1 warm-up round, checkers alternating. "vs ${ref}": ${ref}'s median divided by the checker's. ¹: the checker exited non-zero (it reported errors).`, "");
+
+	out.push("## Conditions", "");
+	const ac = run.rows.every(r => r.power === "AC");
+	const charges = run.rows.map(r => r.charge);
+	const charge = Math.min(...charges) < 0 ? "No battery." : `Charge ${Math.min(...charges)}–${Math.max(...charges)}%.`;
+	out.push(`- Power: ${ac ? `all ${run.rows.length} runs on AC` : "**some runs not on AC**"}. ${charge}`);
+	out.push(`- Kept awake by: ${m.keptAwakeBy ?? "**nothing** (sleep was not prevented)"}.`);
+	const events = m.conditionsError ? `**not recorded** (${m.conditionsError})` : !m.osEvents ? "**not recorded**" : m.osEvents.events.length ? `**${m.osEvents.events.length}** (see run.json)` : "none";
+	out.push(`- Sleep, wake and thermal events during the run${m.osEvents ? ` (${m.osEvents.source})` : ""}: ${events}.`);
+	out.push(`- 1-minute load average ${m.loadAtStart.split(" ")[0]} at the start, ${m.loadAtEnd?.split(" ")[0] ?? "–"} at the end (the checkers' own threads raise it).`);
+	out.push(`- Preflight warnings: ${m.preflight.warnings.length ? m.preflight.warnings.join("; ") : "none"}.`);
+	out.push(`- Cold check: files written to the fresh ${m.coldCheckVariables.join(", ")}: ${m.coldCheckFilesWritten.length ? `**${m.coldCheckFilesWritten.length} cases** (see run.json)` : "none"}.`, "");
+
+	out.push("## Checkers", "", "| Checker | Package | Reports itself as | Native binary sha256 |", "|---|---|---|---|");
+	for (const c of m.checkers) {
+		const name = `${c.name}${c.role === "explain" ? " (diagnostics only)" : ""}`;
+		out.push(c.available === false ? `| ${name} | \`${c.package}\` | not available on ${m.machine.platform} | – |` : `| ${name} | \`${c.package}\` | \`${c.versionOutput}\` | \`${c.binarySha256}\` |`);
+	}
+	out.push("");
+
+	out.push("## Projects", "", "| Project | Commit | Command | Gate |", "|---|---|---|---|");
+	for (const p of m.projects) {
+		const first = p.gate.exit === 0 ? "" : `: \`${(run.read("gate", `${p.name}.txt`) ?? "").split("\n")[0].replaceAll("|", "\\|")}\``;
+		out.push(`| [${p.name}](${p.repo}) | \`${p.sha.slice(0, 12)}\` | \`${p.args.join(" ")}\` (${p.argsSource}) | ${p.gate.exit === 0 ? "0 errors" : `**rejected**${first}`} |`);
+	}
+	out.push("");
+
+	out.push("## Default threading", "", ...unavailableNote(run), timingTable(run, "default", "default", checkers, ref), "", resourceTable(run, checkers), "");
+	for (const n of m.threadCounts) {
+		out.push(`## ${n === 1 ? "Single-threaded" : `${n} threads`}`, "", `${threaded.join(", ")}; checkers without a documented thread flag are not included.`, "", timingTable(run, "matched", n, threaded, ref), "");
+	}
+
+	out.push("## Cold check", "", `Normal environment vs fresh empty ${m.coldCheckVariables.join(", ")}, 3 runs each.`, "", "| Checker | " + projects.map(p => `${p} normal | ${p} fresh`).join(" | ") + " |", "|---|" + projects.map(() => "---|---|").join(""));
+	for (const c of checkers) {
+		const span = (p: string, phase: string) => {
+			const rs = run.rows.filter(r => r.project === p && r.phase === phase && r.checker === c).map(r => r.real);
+			return `${Math.min(...rs).toFixed(2)}–${Math.max(...rs).toFixed(2)}`;
+		};
+		out.push(`| ${c} | ${projects.map(p => `${span(p, "cold-normal")} | ${span(p, "cold-fresh")}`).join(" | ")} |`);
+	}
+	out.push("");
+
+	out.push("## Files in each program", "", `\`--listFilesOnly\` per checker (bun documents no way to list files; its \`--timing\` counts are shown). Project files: outside \`node_modules\` and the checker's bundled \`lib.*.d.ts\`.`, "");
+	for (const p of projects) {
+		out.push(`### ${p}`, "", "| Checker | Files | Lib files | Project files | Same as " + ref + " |", "|---|---|---|---|---|");
+		for (const f of files(run, p)) {
+			if (f.kind === "counts") out.push(`| ${f.checker} | ${f.counts ? `${f.counts.loaded} loaded, ${f.counts.checked} checked` : "–"} | – | – | ${f.sameCount ? "same count" : "**different count**"} |`);
+			else out.push(`| ${f.checker} | ${f.total} | ${f.lib} | ${f.project} | ${f.same ? "same list" : f.sameNonLib ? `same non-lib files; lib files differ (+${f.onlyHere.length} / −${f.onlyRef.length})` : "**different**"} |`);
+		}
+		out.push("");
+	}
+
+	out.push("## Diagnostics", "", `Each checker ran twice on each project, clean and with \`fixtures/patches/<project>.patch\` applied. Compared with ${ref} byte for byte, and after normalising to one \`path:line:col code message\` line per diagnostic (elaboration lines and bun's summary dropped).`, "", correctnessTable(run), "", DIFF_LEGEND, "");
+	out.push("| Project | State | Checker | Errors | Repeat run identical | Exit codes |", "|---|---|---|---|---|---|");
+	for (const p of projects) for (const r of parity(run, p)) out.push(`| ${p} | ${r.state} | ${r.checker} | ${r.errors} | ${r.repeat ? "yes" : "**no**"} | ${r.exits.join(", ")} |`);
+	out.push("", "### Differences, verbatim (normalised form)", "");
+	let any = false;
+	for (const p of projects) {
+		for (const r of parity(run, p)) {
+			if (!r.extra.length && !r.missing.length) continue;
+			any = true;
+			out.push(`**${p}, ${r.state}, ${r.checker}**`, "");
+			for (const l of r.extra) out.push(`- only in ${r.checker}: \`${l}\``);
+			for (const l of r.missing) out.push(`- only in ${ref}: \`${l}\``);
+			out.push("");
+		}
+	}
+	if (!any) out.push("None.", "");
+	return out.join("\n");
+}
+
+// ---------------------------------------------------------------------------- README block
+
+function readmeBlock(run: Run, others: Run[]): string {
+	const ref = referenceName(run);
+	const checkers = timedNames(run);
+	const threaded = checkers.filter(hasThreadFlag);
+	const m = run.meta;
+	return [
+		START,
+		`<!-- Generated by \`node bench report\` from results/${run.name}/. Do not edit by hand. -->`,
+		"",
+		`Latest run: [\`${run.name}\`](results/${run.name}/report.md), ${m.machine.cpu}, ${m.machine.os}, ${m.started.slice(0, 10)}. Wall time is the median of ${m.iterations} runs (min–max); "vs ${ref}" is ${ref}'s median divided by the checker's. ¹: the checker reported errors where ${ref} reported none.`,
+		"",
+		...(m.note ? [`**Note:** ${m.note}`, ""] : []),
+		"### Default threading",
+		"",
+		...unavailableNote(run),
+		timingTable(run, "default", "default", checkers, ref),
+		"",
+		resourceTable(run, checkers),
+		"",
+		"### Single-threaded",
+		"",
+		`${threaded.join(", ")}, each with its documented single-thread flag.`,
+		"",
+		timingTable(run, "matched", 1, threaded, ref),
+		"",
+		"### Diagnostics compared with " + ref,
+		"",
+		correctnessTable(run),
+		"",
+		DIFF_LEGEND,
+		"",
+		`Full report, with every thread setting, the cold check, file lists and every diagnostic difference verbatim: [\`results/${run.name}/report.md\`](results/${run.name}/report.md).`,
+		...(others.length ? ["", "Latest run on other platforms: " + others.map(o => `[${o.meta.machine.platform}, ${o.meta.machine.cpu}](results/${o.name}/report.md)`).join(", ") + "."] : []),
+		END,
+	].join("\n");
+}
+
+// ---------------------------------------------------------------------------- entry
+
+function writeOrCheck(file: string, content: string, check: boolean): void {
+	const rel = path.relative(ROOT, file);
+	const current = fs.existsSync(file) ? fs.readFileSync(file, "utf8") : null;
+	if (check) {
+		if (current !== content) {
+			console.error(`out of date: ${rel} (run node bench report)`);
+			process.exitCode = 1;
+		}
+		return;
+	}
+	if (current !== content) fs.writeFileSync(file, content);
+	console.log(`${current === content ? "unchanged" : "wrote"} ${rel}`);
+}
+
+/** Writes one run's report.md only (used for smoke runs). */
+export function reportRun(name: string): void {
+	writeOrCheck(path.join(RESULTS_DIR, name, "report.md"), reportMarkdown(loadRun(name)) + "\n", false);
+}
+
+/** Writes every run's report.md, and the README block from the latest (or the named) run. */
+const NO_RUNS = [START, "<!-- Generated by `node bench report`. Do not edit by hand. -->", "", "No published run yet.", END].join("\n");
+
+export function report(name?: string, { check = false }: { check?: boolean } = {}): void {
+	const all = listRuns();
+	if (!all.length) {
+		const [before, rest] = fs.readFileSync(README, "utf8").split(START);
+		if (rest === undefined) throw new Error(`README.md has no ${START} marker`);
+		writeOrCheck(README, before + NO_RUNS + rest.split(END)[1], check);
+		return;
+	}
+	for (const r of all) writeOrCheck(path.join(RESULTS_DIR, r, "report.md"), reportMarkdown(loadRun(r)) + "\n", check);
+	const latest = loadRun(name ?? all[all.length - 1]);
+	// The latest run on each other platform, linked below the tables.
+	const byPlatform = new Map<string, Run>();
+	for (const r of all.map(loadRun)) if (r.meta.machine.platform !== latest.meta.machine.platform) byPlatform.set(r.meta.machine.platform, r);
+	const [before, rest] = fs.readFileSync(README, "utf8").split(START);
+	if (rest === undefined) throw new Error(`README.md has no ${START} marker`);
+	writeOrCheck(README, before + readmeBlock(latest, [...byPlatform.values()]) + rest.split(END)[1], check);
+}

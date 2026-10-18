@@ -1,0 +1,30 @@
+diff --git a/app/utils/date.ts b/app/utils/date.ts
+index 48bc94d..263d521 100644
+--- a/app/utils/date.ts
++++ b/app/utils/date.ts
+@@ -122,3 +122,5 @@ export function dateToExpiry(
+     date: formatDate(date, "MMM dd, yyyy", { locale }),
+   });
+ }
++
++export const __benchBreak1: number = "not a number";
+diff --git a/server/utils/crypto.ts b/server/utils/crypto.ts
+index 4be6947..140b5c9 100644
+--- a/server/utils/crypto.ts
++++ b/server/utils/crypto.ts
+@@ -27,3 +27,5 @@ export function safeEqual(a?: string | null, b?: string | null) {
+ export function hash(input: string) {
+   return crypto.createHash("sha256").update(input).digest("hex");
+ }
++
++export const __benchBreak2 = Math.max("a", 1);
+diff --git a/shared/utils/color.ts b/shared/utils/color.ts
+index d34f067..70fea26 100644
+--- a/shared/utils/color.ts
++++ b/shared/utils/color.ts
+@@ -219,3 +219,5 @@ export const hexToRgba = (hex: string): RgbaColor => {
+       hex.length === 8 ? round(parseInt(hex.substring(6, 8), 16) / 255, 2) : 1,
+   };
+ };
++
++export const __benchBreak3 = "x".notAMethod();

@@ -1,0 +1,20 @@
+{
+  // The harness runs directly with Node's type stripping (no build step), so only erasable
+  // TypeScript syntax is allowed and imports use .ts extensions.
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "types": ["node"],
+    "skipLibCheck": false
+  },
+  "include": ["bench/**/*.ts", "test/**/*.ts"]
+}

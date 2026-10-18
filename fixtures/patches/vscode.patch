@@ -1,0 +1,30 @@
+diff --git a/src/vs/base/common/strings.ts b/src/vs/base/common/strings.ts
+index f1dd62fd..1d40a0ad 100644
+--- a/src/vs/base/common/strings.ts
++++ b/src/vs/base/common/strings.ts
+@@ -1422,3 +1422,5 @@ function toBinary(str: string): string {
+ export function multibyteAwareBtoa(str: string): string {
+ 	return btoa(toBinary(str));
+ }
++
++export const __benchBreak1: number = "not a number";
+diff --git a/src/vs/platform/files/common/files.ts b/src/vs/platform/files/common/files.ts
+index 4181a930..a2052811 100644
+--- a/src/vs/platform/files/common/files.ts
++++ b/src/vs/platform/files/common/files.ts
+@@ -1656,3 +1656,5 @@ export function getLargeFileConfirmationLimit(arg?: string | URI): number {
+ }
+ 
+ //#endregion
++
++export const __benchBreak2 = Math.max("a", 1);
+diff --git a/src/vs/workbench/common/editor.ts b/src/vs/workbench/common/editor.ts
+index 38033cc0..8c25a0b3 100644
+--- a/src/vs/workbench/common/editor.ts
++++ b/src/vs/workbench/common/editor.ts
+@@ -1771,3 +1771,5 @@ export interface IToolbarActions {
+ 	readonly primary: IAction[];
+ 	readonly secondary: IAction[];
+ }
++
++export const __benchBreak3 = "x".notAMethod();
