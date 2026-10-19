@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 598" width="760" height="598" role="img" aria-labelledby="t d">
+<title id="t">Type check wall time, one crossing per check</title>
+<desc id="d">Apple M5, macOS 26.5.1 (25F80), default threading, median of 7 runs (run 2026-10-18-apple-m5-darwin). type-fest: tsgo 7.44 s, tsc-ts 1.67 s, tsc-rs 2.19 s, tsrs 1.70 s, bun 1.37 s. outline: tsgo 4.42 s, tsc-ts 1.17 s, tsc-rs 1.84 s, tsrs 0.81 s, bun 1.19 s. vscode: tsgo 8.21 s, tsc-ts 3.79 s, tsc-rs 3.36 s, tsrs 1.44 s, bun 2.53 s.</desc>
+<style>
+text{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:13px;fill:#1f2328}
+.bg{fill:#ffffff;stroke:#d1d9e0}
+.title{font-size:15px;font-weight:600}.sub,.foot{font-size:12px;fill:#59636e}.project{font-weight:600}
+.time,.ratio{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}
+.track{stroke:#d1d9e0;stroke-width:2;stroke-linecap:round}
+.ball{animation:cross 1s linear infinite alternate}
+@keyframes cross{to{transform:translateX(436px)}}
+@media (prefers-color-scheme:dark){.bg{fill:#0d1117;stroke:#3d444d}text{fill:#e6edf3}.sub,.foot{fill:#9198a1}.track{stroke:#3d444d}}
+@media (prefers-reduced-motion:reduce){.ball{animation:none}}
+</style>
+<rect class="bg" x="0.5" y="0.5" width="759" height="597" rx="6"/>
+<text class="title" x="16" y="24">Wall time of one full type check: each crossing is one check, in real time</text>
+<text class="sub" x="16" y="42">Apple M5, macOS 26.5.1 (25F80), default threading, median of 7 runs (run 2026-10-18-apple-m5-darwin)</text>
+<text class="project" x="16" y="74">type-fest</text>
+<text class="sub" x="576" y="74">median</text>
+<text class="sub" x="744" y="74" text-anchor="end">vs tsgo</text>
+<text class="name" x="16" y="103">tsgo</text>
+<line class="track" x1="110" y1="99" x2="560" y2="99"/>
+<circle class="ball" cx="117" cy="99" r="7" fill="#8a8f98" style="animation-duration:7.44s"/>
+<text class="time" x="576" y="103">7.44 s</text>
+<text class="ratio" x="744" y="103" text-anchor="end">1.0×</text>
+<text class="name" x="16" y="129">tsc-ts</text>
+<line class="track" x1="110" y1="125" x2="560" y2="125"/>
+<circle class="ball" cx="117" cy="125" r="7" fill="#3178c6" style="animation-duration:1.67s"/>
+<text class="time" x="576" y="129">1.67 s</text>
+<text class="ratio" x="744" y="129" text-anchor="end">4.5×</text>
+<text class="name" x="16" y="155">tsc-rs</text>
+<line class="track" x1="110" y1="151" x2="560" y2="151"/>
+<circle class="ball" cx="117" cy="151" r="7" fill="#e8743b" style="animation-duration:2.19s"/>
+<text class="time" x="576" y="155">2.19 s</text>
+<text class="ratio" x="744" y="155" text-anchor="end">3.4×</text>
+<text class="name" x="16" y="181">tsrs</text>
+<line class="track" x1="110" y1="177" x2="560" y2="177"/>
+<circle class="ball" cx="117" cy="177" r="7" fill="#19a979" style="animation-duration:1.70s"/>
+<text class="time" x="576" y="181">1.70 s</text>
+<text class="ratio" x="744" y="181" text-anchor="end">4.4×</text>
+<text class="name" x="16" y="207">bun</text>
+<line class="track" x1="110" y1="203" x2="560" y2="203"/>
+<circle class="ball" cx="117" cy="203" r="7" fill="#c94fb6" style="animation-duration:1.37s"/>
+<text class="time" x="576" y="207">1.37 s</text>
+<text class="ratio" x="744" y="207" text-anchor="end">5.4×</text>
+<text class="project" x="16" y="238">outline</text>
+<text class="sub" x="576" y="238">median</text>
+<text class="sub" x="744" y="238" text-anchor="end">vs tsgo</text>
+<text class="name" x="16" y="267">tsgo</text>
+<line class="track" x1="110" y1="263" x2="560" y2="263"/>
+<circle class="ball" cx="117" cy="263" r="7" fill="#8a8f98" style="animation-duration:4.42s"/>
+<text class="time" x="576" y="267">4.42 s</text>
+<text class="ratio" x="744" y="267" text-anchor="end">1.0×</text>
+<text class="name" x="16" y="293">tsc-ts</text>
+<line class="track" x1="110" y1="289" x2="560" y2="289"/>
+<circle class="ball" cx="117" cy="289" r="7" fill="#3178c6" style="animation-duration:1.17s"/>
+<text class="time" x="576" y="293">1.17 s</text>
+<text class="ratio" x="744" y="293" text-anchor="end">3.8×</text>
+<text class="name" x="16" y="319">tsc-rs</text>
+<line class="track" x1="110" y1="315" x2="560" y2="315"/>
+<circle class="ball" cx="117" cy="315" r="7" fill="#e8743b" style="animation-duration:1.84s"/>
+<text class="time" x="576" y="319">1.84 s ¹</text>
+<text class="ratio" x="744" y="319" text-anchor="end">2.4×</text>
+<text class="name" x="16" y="345">tsrs</text>
+<line class="track" x1="110" y1="341" x2="560" y2="341"/>
+<circle class="ball" cx="117" cy="341" r="7" fill="#19a979" style="animation-duration:0.81s"/>
+<text class="time" x="576" y="345">0.81 s ¹</text>
+<text class="ratio" x="744" y="345" text-anchor="end">5.5×</text>
+<text class="name" x="16" y="371">bun</text>
+<line class="track" x1="110" y1="367" x2="560" y2="367"/>
+<circle class="ball" cx="117" cy="367" r="7" fill="#c94fb6" style="animation-duration:1.19s"/>
+<text class="time" x="576" y="371">1.19 s</text>
+<text class="ratio" x="744" y="371" text-anchor="end">3.7×</text>
+<text class="project" x="16" y="402">vscode</text>
+<text class="sub" x="576" y="402">median</text>
+<text class="sub" x="744" y="402" text-anchor="end">vs tsgo</text>
+<text class="name" x="16" y="431">tsgo</text>
+<line class="track" x1="110" y1="427" x2="560" y2="427"/>
+<circle class="ball" cx="117" cy="427" r="7" fill="#8a8f98" style="animation-duration:8.21s"/>
+<text class="time" x="576" y="431">8.21 s</text>
+<text class="ratio" x="744" y="431" text-anchor="end">1.0×</text>
+<text class="name" x="16" y="457">tsc-ts</text>
+<line class="track" x1="110" y1="453" x2="560" y2="453"/>
+<circle class="ball" cx="117" cy="453" r="7" fill="#3178c6" style="animation-duration:3.79s"/>
+<text class="time" x="576" y="457">3.79 s</text>
+<text class="ratio" x="744" y="457" text-anchor="end">2.2×</text>
+<text class="name" x="16" y="483">tsc-rs</text>
+<line class="track" x1="110" y1="479" x2="560" y2="479"/>
+<circle class="ball" cx="117" cy="479" r="7" fill="#e8743b" style="animation-duration:3.36s"/>
+<text class="time" x="576" y="483">3.36 s ¹</text>
+<text class="ratio" x="744" y="483" text-anchor="end">2.4×</text>
+<text class="name" x="16" y="509">tsrs</text>
+<line class="track" x1="110" y1="505" x2="560" y2="505"/>
+<circle class="ball" cx="117" cy="505" r="7" fill="#19a979" style="animation-duration:1.44s"/>
+<text class="time" x="576" y="509">1.44 s ¹</text>
+<text class="ratio" x="744" y="509" text-anchor="end">5.7×</text>
+<text class="name" x="16" y="535">bun</text>
+<line class="track" x1="110" y1="531" x2="560" y2="531"/>
+<circle class="ball" cx="117" cy="531" r="7" fill="#c94fb6" style="animation-duration:2.53s"/>
+<text class="time" x="576" y="535">2.53 s</text>
+<text class="ratio" x="744" y="535" text-anchor="end">3.2×</text>
+<text class="foot" x="16" y="566">"vs tsgo": tsgo's median divided by the checker's. Each checker uses its own default threading.</text>
+<text class="foot" x="16" y="584">¹ reported errors where tsgo reported none.</text>
+</svg>

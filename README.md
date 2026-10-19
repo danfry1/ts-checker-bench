@@ -11,6 +11,8 @@ New checker or new version? Edit one line in [`checkers.json`](checkers.json) an
 
 Latest run: [`2026-10-18-apple-m5-darwin`](results/2026-10-18-apple-m5-darwin/report.md), Apple M5, macOS 26.5.1 (25F80), 2026-10-18. Wall time is the median of 7 runs (min–max); "vs tsgo" is tsgo's median divided by the checker's. ¹: the checker reported errors where tsgo reported none.
 
+![Each checker's median wall time on each project, animated: a ball crosses its lane once per type check, in real time](results/2026-10-18-apple-m5-darwin/race.svg)
+
 ### Default threading
 
 | Checker | type-fest wall s | vs tsgo | outline wall s | vs tsgo | vscode wall s | vs tsgo |
@@ -108,8 +110,12 @@ Projects are added the same way, in [`projects.json`](projects.json), with the p
 | [`bench/`](bench/) | The harness (`node bench <command>`) and the report generator |
 | [`tools/`](tools/) | One pinned install per checker |
 | [`fixtures/`](fixtures/) | Error-injection patches, type-fest's lockfile, a small type-fest consumer |
-| [`results/`](results/) | One folder per run: `run.json` (machine, versions, binary hashes, conditions), `timing.csv`, diagnostics, file lists, `--help` output, `report.md` |
+| [`results/`](results/) | One folder per run: `run.json` (machine, versions, binary hashes, conditions), `timing.csv`, diagnostics, file lists, `--help` output, `report.md` and `race.svg` |
 | [`docs/METHOD.md`](docs/METHOD.md) | Method and caveats |
+
+## Independence
+
+This benchmark is independent. Its author is not affiliated with Microsoft, Vercel, Oven (bun) or the authors of tsc-ts, tsc-rs or tsrs, and no one funded or reviewed it before publication.
 
 ## Corrections
 
