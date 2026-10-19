@@ -26,6 +26,11 @@
   "loadAtStart": "2.80 5.51 8.10",
   "keptAwakeBy": "caffeinate",
   "roundOrder": "rotating",
+  "harness": {
+    "commit": "bde799c06fc93b5cc19af2cb72306efeb6f1a455",
+    "dirty": false,
+    "source": "added 2026-10-19: this run did not record it; the last harness commit before the run started and the parent of its results commit 11c0091, which changes no harness file"
+  },
   "environment": {
     "BUN_INSTALL": "~/.bun"
   },

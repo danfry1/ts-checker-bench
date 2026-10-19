@@ -2,7 +2,7 @@
 
 How fast are the TypeScript type checkers, and how do their diagnostics compare with tsgo's? This benchmark runs a full-program type check of real projects, in a fresh process with no incremental cache, with every checker, on the same machine, in the same session. It compares their speed, memory and diagnostics with Microsoft's tsgo, and publishes the raw output behind every number.
 
-New checker or new version? Edit one line in [`checkers.json`](checkers.json) and run the benchmark ([below](#add-a-checker-or-a-version)).
+It is independent: not affiliated with or funded by Microsoft, Vercel, Oven (bun) or the authors of any checker in it ([more](#independence)).
 
 ## Results
 
@@ -13,7 +13,7 @@ Latest run: [`2026-10-19-apple-m5-darwin`](results/2026-10-19-apple-m5-darwin/re
 
 Default threading differs: tsgo and tsc-rs default to 4 checkers; tsc-ts, tsrs and bun use one per core, up to 10 on this 10-core machine ([sources](docs/METHOD.md#threads)).
 
-tsc-rs and tsrs port TypeScript 7.1.0-dev and report errors that tsgo 7.0.2 does not on the clean Outline (1) and VS Code (10), so on those projects they are not drop-in replacements for tsgo 7.0.2.
+tsc-rs and tsrs port TypeScript 7.1.0-dev and report errors that tsgo 7.0.2 does not on the clean Outline (1) and VS Code (10); their upstream TypeScript builds report exactly the same ([below](#diagnostics-compared-with-each-checkers-upstream-build)).
 
 ![type-fest: each checker's median wall time, animated in real time](results/2026-10-19-apple-m5-darwin/race-type-fest.svg)
 
@@ -21,7 +21,7 @@ tsc-rs and tsrs port TypeScript 7.1.0-dev and report errors that tsgo 7.0.2 does
 
 ![VS Code: each checker's median wall time, animated in real time](results/2026-10-19-apple-m5-darwin/race-vscode.svg)
 
-The same races single-threaded, every checker with its documented one-thread flag: [in the run's report](results/2026-10-19-apple-m5-darwin/report.md#single-threaded).
+The same charts single-threaded, every checker with its documented one-thread flag: [in the run's report](results/2026-10-19-apple-m5-darwin/report.md#single-threaded).
 
 ### Default threading
 
@@ -92,7 +92,7 @@ Full report, with every thread setting, the cold check, file lists and every dia
 Earlier runs on darwin-arm64, to compare: [`2026-10-18-apple-m5-darwin`](results/2026-10-18-apple-m5-darwin/report.md). Seconds can move between sessions on the same machine, so compare ratios rather than seconds.
 <!-- results:end -->
 
-How to read these: every checker runs with its shipped defaults, plus only the project's own typecheck arguments. No tuning flags are used: not tsrs's `--checkerAssignment go`, and not tsc-rs's `--fast`. The first table uses each checker's default threading, and those defaults differ; the single-threaded table sets one thread with each checker's documented flag ([details](docs/METHOD.md#threads)). tsc-rs and tsrs port TypeScript 7.1-dev, not 7.0.2; the "explain" checker, upstream tsgo 7.1-dev, shows which of their diagnostic differences come from TypeScript 7.1 itself. Method, caveats and what the numbers do not show: [`docs/METHOD.md`](docs/METHOD.md).
+How to read these: every checker runs with its shipped defaults, plus only the project's own typecheck arguments. No tuning flags are used: not tsrs's `--checkerAssignment go`, and not tsc-rs's `--fast`. The first table uses each checker's default threading, and those defaults differ; the single-threaded table sets one thread with each checker's documented flag ([details](docs/METHOD.md#threads)). tsc-rs and tsrs port TypeScript 7.1-dev, not 7.0.2; two diagnostics-only builds of upstream tsgo 7.1-dev, one per port, show which of their diagnostic differences come from TypeScript 7.1 itself. Method, caveats and what the numbers do not show: [`docs/METHOD.md`](docs/METHOD.md).
 
 ## Checkers and projects
 
@@ -103,7 +103,8 @@ How to read these: every checker runs with its shipped defaults, plus only the p
 | tsc-rs | [`tsc-rs@0.7.0`](https://www.npmjs.com/package/tsc-rs) |
 | tsrs | [`tsrs@0.16.0-ts7.1.0-dev.20260929`](https://www.npmjs.com/package/tsrs) |
 | bun check | [`bun@1.4.3`](https://www.npmjs.com/package/bun) |
-| tsgo 7.1-dev (diagnostics only, not timed) | [`typescript@7.1.0-dev.20260930.4`](https://www.npmjs.com/package/typescript) |
+| tsgo 7.1-dev (diagnostics only, not timed; the build tsrs ports) | [`typescript@7.1.0-dev.20260930.4`](https://www.npmjs.com/package/typescript) |
+| tsgo 7.1-dev-20261008 (diagnostics only, not timed; the build tsc-rs ports) | [`typescript@7.1.0-dev.20261008.1`](https://www.npmjs.com/package/typescript) |
 
 | Project | Why |
 |---|---|
@@ -129,6 +130,8 @@ node bench run          # about an hour; writes results/<date>-<cpu>-<os>/
 
 ## Add a checker or a version
 
+New checkers and new versions are a one-line change:
+
 1. Add or edit an entry in [`checkers.json`](checkers.json): npm package and version, the native binary its bin runs, and its thread flag if its own `--help` or README documents one.
 2. `node bench setup`, which pins it in `tools/<name>/` with a lockfile.
 3. `node bench run`, then open a pull request with `checkers.json`, `tools/<name>/` and the new `results/` folder.
@@ -148,11 +151,11 @@ Projects are added the same way, in [`projects.json`](projects.json), with the p
 
 ## Independence
 
-This benchmark is independent. Its author is not affiliated with Microsoft, Vercel, Oven (bun) or the authors of tsc-ts, tsc-rs or tsrs, and no one funded or reviewed it before publication.
+This benchmark is independent. Its author is not affiliated with Microsoft, Vercel, Oven (bun) or the authors of tsc-ts, tsc-rs or tsrs. None of them funded or reviewed it before publication, and no one else funded it.
 
 ## Corrections
 
-If a checker is misconfigured, a flag is missing, or a number looks wrong, open an issue with the run, file and line. Fixes land as new commits; published runs are not rewritten.
+If a checker is misconfigured, a flag is missing, or a number looks wrong, open an issue with the run, file and line. Fixes land as new commits. Published timings are never rewritten; anything added to a run afterwards is marked as added later in its report.
 
 ## License
 

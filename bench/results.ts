@@ -51,6 +51,8 @@ export interface RunMeta {
 	keptAwakeBy: string | null;
 	/** Checker order within a round: "rotating" starts each round one place further along; absent means fixed. */
 	roundOrder?: "rotating";
+	/** This repository's commit when the run started; dirty if bench/, the config or fixtures had uncommitted changes. source: how it was found, when not recorded by the run itself. */
+	harness?: { commit: string; dirty: boolean; source?: string };
 	/** Checkers that publish no build for this platform have available: false and no version or hash. */
 	/** recordedLater: the date a checker was added to an existing run (diagnostics only), when it was. */
 	checkers: { name: string; package: string; role: string; available: boolean; versionOutput?: string; binarySha256?: string; recordedLater?: string }[];

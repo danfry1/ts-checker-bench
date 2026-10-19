@@ -27,6 +27,11 @@
   },
   "loadAtStart": "2.66 4.57 6.58",
   "keptAwakeBy": "caffeinate",
+  "harness": {
+    "commit": "a5dbc4a73b3e38bb4b97f2cb3895c47b6240b06e",
+    "dirty": false,
+    "source": "added 2026-10-19: this run did not record it; the last harness commit before the run started and the parent of its results commit a8ca6e9, which changes no harness file"
+  },
   "environment": {
     "BUN_INSTALL": "~/.bun"
   },

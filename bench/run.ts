@@ -135,6 +135,7 @@ function startMeta(pl: Plan, pre: Preflight, keptAwakeBy: string | null): RunMet
 		loadAtStart: loadAverage(),
 		keptAwakeBy,
 		roundOrder: "rotating",
+		harness: { commit: git(ROOT, "rev-parse", "HEAD"), dirty: git(ROOT, "status", "--porcelain", "--", "bench", "checkers.json", "projects.json", "fixtures", "tools").length > 0 },
 		environment: Object.fromEntries(Object.entries(process.env).filter((e): e is [string, string] => TOOL_ENV.test(e[0]) && e[1] !== undefined)),
 		checkers: checkers.map(c => {
 			const base = { name: c.name, package: `${c.package}@${c.version}`, role: c.role ?? "candidate" };
