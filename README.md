@@ -122,8 +122,8 @@ Runs on macOS, Linux (glibc) and Windows, on x64 and arm64. Requires Node ≥ 22
 (cd bench && npm ci && npm run check)   # the harness's own typecheck and tests
 node bench setup        # every checker into tools/, every project into projects/ (about 10 GB)
 node bench preflight    # plugged in? anything busy?
-node bench run --smoke  # about 8 minutes: end-to-end check into results/.smoke/ (not published)
-node bench run          # about an hour; writes results/<date>-<cpu>-<os>/
+node bench run --smoke  # about 6 minutes: end-to-end check into results/.smoke/ (not published)
+node bench run          # about 40 minutes on a 10-core Mac; writes results/<date>-<cpu>-<os>/
 ```
 
 `node bench run` keeps the machine awake (caffeinate, systemd-inhibit or SetThreadExecutionState), stops if it leaves AC power, and writes the run's report and this README's results block at the end. `node bench run --dry-run` prints every command it would run.

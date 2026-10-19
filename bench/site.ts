@@ -353,6 +353,16 @@ function methodSection(run: Run): string {
 </section>`;
 }
 
+/** The steps in AGENTS.md, as title, note and command. */
+const STEPS: [string, string, string][] = [
+	["Get the code", "Clone the repository.", "git clone {repo} && cd ts-checker-bench"],
+	["Check the harness", "Its typecheck and tests, and that the committed reports regenerate exactly.", "(cd bench && npm ci && npm run check)"],
+	["Install everything", "Every checker from its lockfile and every project at its pinned commit. About 10 GB.", "node bench setup"],
+	["Check the machine", "Refuses to start on battery or with a checkout that is not ready; warns about busy processes.", "node bench preflight"],
+	["Try it end to end", "type-fest only, one round, about 6 minutes. Not published.", "node bench run --smoke"],
+	["Run the benchmark", "About 40 minutes on a 10-core Mac, longer on slower ones. Writes results/<date>-<cpu>-<os>/ with its report.", "node bench run"],
+];
+
 const FAVICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect x="3" y="6" width="26" height="5" rx="2" fill="#8a8f98"/><rect x="3" y="14" width="16" height="5" rx="2" fill="#3178c6"/><rect x="3" y="22" width="9" height="5" rx="2" fill="#19a979"/></svg>`;
 
 const CSS = `
@@ -466,8 +476,17 @@ main>section:last-child{border-bottom:0}
 .dtable tbody+tbody{margin-top:0}
 .dgrid .dtable{margin-top:6px}
 .threadnote{font-size:14px;color:var(--dim);margin:18px 0 0;max-width:80ch}
-pre{background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:14px 16px;overflow-x:auto;margin:14px 0}
-pre code{font-size:13.5px;line-height:1.6;overflow-wrap:normal;white-space:pre}
+.steps{list-style:none;counter-reset:step;padding:0;margin:20px 0 8px;display:grid;gap:10px}
+.steps li{counter-increment:step;display:grid;grid-template-columns:34px minmax(0,1fr) minmax(0,1.25fr);gap:14px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
+.steps li:last-child{border-bottom:1px solid var(--line)}
+.steps li::before{content:counter(step);width:26px;height:26px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font-size:13px;font-weight:600;color:var(--dim)}
+.step-text b{display:block;font-weight:600}
+.step-text span{display:block;color:var(--dim);font-size:14px;margin-top:2px}
+.cmd{display:flex;align-items:center;gap:10px;background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:8px 8px 8px 14px;min-width:0}
+.cmd code{flex:1;font-size:13.5px;white-space:pre-wrap;overflow-wrap:anywhere}
+.copy{font:inherit;font-size:12.5px;border:1px solid var(--line);background:var(--bg);color:var(--dim);border-radius:5px;padding:3px 9px;cursor:pointer;flex:none}
+.copy:hover{color:var(--fg)}
+.nowrap{white-space:nowrap}
 .checkers .who{font-size:16px}
 .checkers p{margin:4px 0 0}
 .checkers code{white-space:nowrap}
@@ -495,7 +514,9 @@ footer{color:var(--dim);font-size:14px;padding-top:28px;padding-bottom:56px}
  .facts{grid-template-columns:1fr;gap:2px}.facts dd{margin-bottom:10px}
  .lede{font-size:17px}
  .verdicts li{grid-template-columns:1fr;gap:2px}
- pre code{font-size:12.5px}
+ .steps li{grid-template-columns:34px minmax(0,1fr);row-gap:8px}
+ .steps .cmd{grid-column:2}
+ .cmd code{font-size:12.5px}
  .dgrid{--lw:66px;--tw:calc((100vw - 40px - var(--lw) - (var(--n) + 2)*var(--gap)) / var(--n));--gap:3px}
  .tile{height:30px;font-size:12.5px}
  .dtable tbody th{font-size:14px;padding-right:4px}
@@ -585,6 +606,10 @@ function choose(key, fromUrl) {
 	});
 }
 document.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => choose(b.dataset.key)));
+document.querySelectorAll(".copy").forEach(b => b.addEventListener("click", async () => {
+	try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = "Copied"; } catch { b.textContent = "Select it"; }
+	setTimeout(() => { b.textContent = "Copy"; }, 1500);
+}));
 // ?threads=1 opens the page at that setting, so a view can be linked.
 const fromUrl = new URLSearchParams(location.search).get("threads");
 if (fromUrl && document.querySelector('.seg button[data-key="t' + fromUrl + '"]')) choose("t" + fromUrl, true);
@@ -652,20 +677,12 @@ ${checkersSection(run)}
 ${methodSection(run)}
 <section id="reproduce">
 <h2>Run it yourself</h2>
-<p>On macOS, Linux or Windows, with Node 22.18 or later and git, on a quiet machine on AC power. A full run takes about an hour on a 10-core Mac. <a href="${blob("AGENTS.md")}">AGENTS.md</a> has every prerequisite and step.</p>
-<pre><code>git clone ${REPO}
-cd ts-checker-bench
-(cd bench &amp;&amp; npm ci &amp;&amp; npm run check)
-# every checker and project, about 10 GB
-node bench setup
-# plugged in? anything busy?
-node bench preflight
-# writes results/&lt;date&gt;-&lt;cpu&gt;-&lt;os&gt;/
-node bench run</code></pre>
+<p>On macOS, Linux or Windows, with Node 22.18 or later and git. Use a quiet machine on AC power. <a href="${blob("AGENTS.md")}">AGENTS.md</a> lists every prerequisite and what to check at each step.</p>
+<ol class="steps">${STEPS.map(([title, note, cmd]) => `<li><div class="step-text"><b>${esc(title)}</b><span>${esc(note)}</span></div><div class="cmd"><code>${esc(cmd.replace("{repo}", REPO))}</code><button type="button" class="copy" data-copy="${esc(cmd.replace("{repo}", REPO))}" aria-label="Copy command">Copy</button></div></li>`).join("\n")}</ol>
 </section>
 </main>
 <footer>
-<p>Generated by <code>node bench report</code> from <a href="${tree(`results/${run.name}`)}">results/${run.name}/</a>, run on ${m.started.slice(0, 10)}. CI checks that this page matches the raw results. Fixes land as new commits and published timings are never rewritten; to report one, <a href="${REPO}/issues/new/choose">open an issue</a>. <a href="${blob("LICENSE")}">MIT licence</a>.</p>
+<p>Generated by <code>node bench report</code> from <a href="${tree(`results/${run.name}`)}">results/${run.name}/</a>, run on <span class="nowrap">${m.started.slice(0, 10)}</span>. CI checks that this page matches the raw results. Fixes land as new commits and published timings are never rewritten; to report one, <a href="${REPO}/issues/new/choose">open an issue</a>. <a href="${blob("LICENSE")}">MIT licence</a>.</p>
 </footer>
 <script>${JS}</script>
 </body>

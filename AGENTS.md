@@ -35,7 +35,7 @@ node bench setup            # every checker into tools/, every project into proj
 ## 4. Check the harness end to end
 
 ```sh
-node bench run --smoke      # about 8 minutes: type-fest only, one round, into results/.smoke/ (not committed)
+node bench run --smoke      # about 6 minutes: type-fest only, one round, into results/.smoke/ (not committed)
 ```
 
 It must end with `wrote results/.smoke/<time>/report.md`. Open that report and confirm:
@@ -46,7 +46,7 @@ It must end with `wrote results/.smoke/<time>/report.md`. Open that report and c
 ## 5. Run
 
 ```sh
-node bench run              # about an hour on a 10-core Mac; longer on slower machines, and on Windows,
+node bench run              # about 40 minutes on a 10-core Mac; longer on slower machines, and on Windows,
                             # where each measurement also starts PowerShell (outside the measured time)
 ```
 

@@ -8,7 +8,7 @@
 //                            --iterations <n>      timed rounds per setting, default 7
 //                            --dry-run             print the plan and exit
 //                            --smoke               type-fest only, 1 iteration, into results/.smoke/;
-//                                                  checks the harness end to end in about 8 minutes
+//                                                  checks the harness end to end in about 6 minutes
 //   report [<run>] [--check]   write results/<run>/report.md, the README results block and site/
 //   site-image             render site/og.html to site/og.png, the link preview (needs Chrome)
 //

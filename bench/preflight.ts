@@ -65,5 +65,5 @@ export function printPreflight(result: Preflight): void {
 	for (const w of result.warnings) console.log(`warning   ${w}`);
 	if (result.busy?.length) console.log(`          busy: ${result.busy.join(", ")} (not recorded)`);
 	if (!result.blocking.length && !result.warnings.length) console.log("ready: on AC power, nothing busy");
-	console.log("A full run takes about an hour. The machine must not sleep or overheat: on a laptop, keep the lid open and the vents clear.");
+	console.log("A full run takes about 40 minutes on a 10-core Mac, longer on slower machines. The machine must not sleep or overheat: on a laptop, keep the lid open and the vents clear.");
 }
