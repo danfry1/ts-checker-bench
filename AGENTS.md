@@ -6,7 +6,7 @@ How to produce a new run on a machine that has never run it. Follow the steps in
 
 | | macOS | Linux | Windows |
 |---|---|---|---|
-| Node | ≥ 22.18 | ≥ 22.18 | ≥ 22.18 |
+| Node | ≥ 22.18 (`.nvmrc`: 24), arm64 on Apple silicon | ≥ 22.18 | ≥ 22.18 |
 | git | yes | yes | yes (Git for Windows) |
 | Timer | `/usr/bin/time` (built in) | GNU time at `/usr/bin/time`: `apt install time` or `dnf install time` | Windows PowerShell 5.1 or PowerShell 7 (built in) |
 | Keep awake | `caffeinate` (built in) | `systemd-inhibit` where systemd runs; otherwise disable sleep yourself | built in |

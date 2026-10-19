@@ -71,6 +71,17 @@ export function timingPrerequisites(): string[] {
 	return [`timing is not supported on ${platform}`];
 }
 
+/**
+ * Whether this Node process runs under Rosetta translation on Apple silicon. It would then pick the
+ * checkers' x64 builds and time them translated. sysctl.proc_translated is 1 for a translated
+ * process, 0 for a native one, and absent on Intel Macs.
+ */
+export function underRosetta(): boolean {
+	if (platform !== "darwin") return false;
+	const r = spawnSync("/usr/sbin/sysctl", ["-in", "sysctl.proc_translated"], { encoding: "utf8" });
+	return r.stdout.trim() === "1";
+}
+
 // ---------------------------------------------------------------------------- power
 
 export interface Power {

@@ -3,7 +3,7 @@
 //   setup [--projects a,b] install every checker (tools/<name>/) and project (projects/<name>/)
 //   preflight              check the machine is fit for timing; exits non-zero if not
 //   run [options]          one full benchmark run into results/<name>/:
-//                            --name <name>         default: <date>-<cpu>, e.g. 2026-10-18-apple-m5
+//                            --name <name>         default: <date>-<cpu>-<os>, e.g. 2026-10-18-apple-m5-darwin
 //                            --projects a,b        default: every project in projects.json
 //                            --iterations <n>      timed rounds per setting, default 7
 //                            --dry-run             print the plan and exit

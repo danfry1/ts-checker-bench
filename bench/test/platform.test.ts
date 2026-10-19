@@ -7,7 +7,7 @@ import os from "node:os";
 import path from "node:path";
 import { projectDir, projects } from "../config.ts";
 import { leakingNodeModules } from "../preflight.ts";
-import { freshDirectoryVariables, measure, osName, power, timingPrerequisites } from "../platform.ts";
+import { freshDirectoryVariables, measure, osName, power, timingPrerequisites, underRosetta } from "../platform.ts";
 import { capture } from "../system.ts";
 
 const canTime = timingPrerequisites().length === 0;
@@ -60,4 +60,9 @@ test("preflight finds node_modules above a checkout, and none above the real pro
 test("capture records the signal of a killed process", { skip: process.platform === "win32" && "Windows has no signals" }, () => {
 	const r = capture([process.execPath, "-e", "process.kill(process.pid, 'SIGKILL')"], os.tmpdir());
 	assert.deepEqual([r.exit, r.signal], [-1, "SIGKILL"]);
+});
+
+test("this test process is not running under Rosetta", () => {
+	// On Apple silicon CI (macos-latest is arm64) this exercises the real sysctl; elsewhere it is false.
+	assert.equal(underRosetta(), process.platform === "darwin" && process.arch === "x64" && os.cpus()[0]?.model.startsWith("Apple"));
 });

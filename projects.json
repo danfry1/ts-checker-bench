@@ -65,7 +65,8 @@
       "sha": "4c37956ba5f04ec342a9d9d5891a38f22c5b7b4e",
       "install": [
         {
-          "run": ["yarn", "install", "--frozen-lockfile"]
+          "run": ["corepack", "yarn", "install", "--frozen-lockfile"],
+          "env": { "COREPACK_ENABLE_DOWNLOAD_PROMPT": "0" }
         }
       ],
       "args": ["-p", "."],

@@ -194,7 +194,7 @@ function reportMarkdown(run: Run): string {
 
 	out.push("## Checkers", "", "| Checker | Package | Reports itself as | Native binary sha256 |", "|---|---|---|---|");
 	for (const c of m.checkers) {
-		const name = `${c.name}${c.role === "explain" ? " (diagnostics only)" : ""}`;
+		const name = `${c.name}${c.role === "explain" ? " (diagnostics only)" : ""}${c.recordedLater ? ` (added ${c.recordedLater}, after the run)` : ""}`;
 		out.push(c.available === false ? `| ${name} | \`${c.package}\` | not available on ${m.machine.platform} | – |` : `| ${name} | \`${c.package}\` | \`${c.versionOutput}\` | \`${c.binarySha256}\` |`);
 	}
 	out.push("");
@@ -221,7 +221,7 @@ function reportMarkdown(run: Run): string {
 	}
 	out.push("");
 
-	out.push("## Files in each program", "", `\`--listFilesOnly\` per checker (bun documents no way to list files; its \`--timing\` counts are shown). Project files: outside \`node_modules\` and the checker's bundled \`lib.*.d.ts\`.`, "");
+	out.push("## Files in each program", "", `\`--listFilesOnly\` per checker (bun documents no way to list files; its \`--timing\` counts are shown; its "checked" count leaves out files it does not type-check, explained in [METHOD](../../docs/METHOD.md#files)). Project files: outside \`node_modules\` and the checker's bundled \`lib.*.d.ts\`.`, "");
 	for (const p of projects) {
 		out.push(`### ${p}`, "", "| Checker | Files | Lib files | Project files | Same as " + ref + " |", "|---|---|---|---|---|");
 		for (const f of files(run, p)) {
@@ -232,6 +232,7 @@ function reportMarkdown(run: Run): string {
 	}
 
 	out.push("## Diagnostics", "", `Each checker ran twice on each project, clean and with \`fixtures/patches/<project>.patch\` applied. Compared with ${ref} byte for byte, and after normalising to one \`path:line:col code message\` line per diagnostic (elaboration lines and bun's summary dropped).`, "", correctnessTable(run), "", DIFF_LEGEND, "");
+	if (ownBuildTable(run).length) out.push("### Compared with each checker's upstream build", "", "Checkers that port a different TypeScript build, compared byte for byte with that build's own output.", "", ...ownBuildTable(run), "");
 	out.push("| Project | State | Checker | Errors | Repeat run identical | Exit codes |", "|---|---|---|---|---|---|");
 	for (const p of projects) for (const r of parity(run, p)) out.push(`| ${p} | ${r.state} | ${r.checker} | ${r.errors} | ${r.repeat ? "yes" : "**no**"} | ${r.exits.join(", ")} |`);
 	out.push("", "### Differences, verbatim (normalised form)", "");
@@ -289,6 +290,72 @@ const RACES = [
 const raceFile = (project: string, suffix: string) => `race-${project}${suffix}.svg`;
 const projectTitle = (name: string) => configuredProjects.find(p => p.name === name)?.title ?? name;
 
+/** The explain-only checker that is the TypeScript build this checker ports, if the run has it. */
+function ownBuild(run: Run, checker: string): string | undefined {
+	const inRun = new Set(run.meta.checkers.filter(c => c.role === "explain" && c.available !== false).map(c => c.name));
+	return configured.find(c => c.role === "explain" && c.explains?.includes(checker) && inRun.has(c.name))?.name;
+}
+
+/** Whether two checkers printed byte-identical output on a project and state; undefined if either is missing. */
+function sameOutput(run: Run, project: string, state: string, a: string, b: string): boolean | undefined {
+	const x = run.read("parity", project, `${state}.${a}.txt`);
+	const y = run.read("parity", project, `${state}.${b}.txt`);
+	return x === null || y === null ? undefined : x === y;
+}
+
+/** Each checker that ports a different TypeScript build, compared byte for byte with that build. */
+function ownBuildTable(run: Run): string[] {
+	const ported = timedNames(run).flatMap(c => {
+		const build = ownBuild(run, c);
+		return build ? [[c, build]] : [];
+	});
+	if (!ported.length) return [];
+	const cols = benchmarked(run).flatMap(p => ["clean", "broken"].map(s => [p, s]));
+	const cell = (c: string, b: string, p: string, s: string) => ({ true: "byte-identical", false: "differs", undefined: "–" })[String(sameOutput(run, p, s, c, b)) as "true" | "false" | "undefined"];
+	return [
+		"| Checker | Its upstream build | " + cols.map(([p, s]) => `${p}, ${s}`).join(" | ") + " |",
+		"|---|---|" + cols.map(() => "---|").join(""),
+		...ported.map(([c, b]) => `| ${c} | ${b} (\`${run.meta.checkers.find(x => x.name === b)?.package}\`) | ${cols.map(([p, s]) => cell(c, b, p, s)).join(" | ")} |`),
+	];
+}
+
+/** Checkers that report errors the reference doesn't on a clean project, with counts per project. */
+function notDropIn(run: Run): string[] {
+	const ref = referenceName(run);
+	const refVersion = run.meta.checkers.find(c => c.name === ref)?.package.split("@").pop();
+	const byChecker = new Map<string, string>();
+	for (const c of timedNames(run).filter(c => c !== ref)) {
+		const extra = benchmarked(run).flatMap(p => {
+			const r = parity(run, p).find(x => x.checker === c && x.state === "clean");
+			return r && !r.normalized ? [`${projectTitle(p)} (${r.extra.length}${r.missing.length ? ` extra, ${r.missing.length} missing` : ""})`] : [];
+		});
+		if (extra.length) byChecker.set(c, extra.join(" and "));
+	}
+	const groups = new Map<string, string[]>();
+	for (const [c, s] of byChecker) groups.set(s, [...(groups.get(s) ?? []), c]);
+	return [...groups].map(([where, cs]) => {
+		// The TypeScript version each reports, without a nightly's date: "7.1.0-dev".
+		const versions = [...new Set(cs.map(c => /\d+\.\d+\.\d+(-dev)?/.exec(run.meta.checkers.find(x => x.name === c)?.versionOutput ?? "")?.[0] ?? ""))];
+		const ports = versions.length === 1 && versions[0] ? ` port TypeScript ${versions[0]} and` : "";
+		return `${cs.join(" and ")}${ports} report errors that ${ref} ${refVersion} does not on the clean ${where}, so on ${where.includes(" and ") ? "those projects" : "that project"} they are not drop-in replacements for ${ref} ${refVersion}.`;
+	});
+}
+
+/** On this machine: each checker's documented default thread count. */
+function defaultThreadsLine(run: Run): string {
+	const cpus = run.meta.machine.cpus;
+	const list = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}` : xs.join(""));
+	const fixed = new Map<number, string[]>();
+	const perCore: string[] = [];
+	for (const c of timedNames(run)) {
+		const d = configured.find(x => x.name === c)?.defaultThreads;
+		if (d === "per-core") perCore.push(c);
+		else if (typeof d === "number") fixed.set(d, [...(fixed.get(d) ?? []), c]);
+	}
+	const parts = [...[...fixed].map(([n, cs]) => `${list(cs)} default to ${n} checkers`), ...(perCore.length ? [`${list(perCore)} use one per core, up to ${cpus} on this ${cpus}-core machine`] : [])];
+	return `Default threading differs: ${parts.join("; ")} ([sources](docs/METHOD.md#threads)).`;
+}
+
 /**
  * How each checker's diagnostics compare with the reference's on this project: the checkers that
  * match, then the others, each noting whether it matches an explain-only checker instead (for
@@ -297,8 +364,6 @@ const projectTitle = (name: string) => configuredProjects.find(p => p.name === n
 function diagnosticsLines(run: Run, project: string): string[] {
 	const ref = referenceName(run);
 	const results = parity(run, project);
-	const explainers = run.meta.checkers.filter(c => c.role === "explain" && c.available !== false).map(c => c.name);
-	const diagnostics = (state: string, checker: string) => normalizeDiagnostics(run.read("parity", project, `${state}.${checker}.txt`) ?? "").join("\n");
 	const same: string[] = [];
 	const differ: string[] = [];
 	for (const c of timedNames(run).filter(c => c !== ref)) {
@@ -309,8 +374,9 @@ function diagnosticsLines(run: Run, project: string): string[] {
 		}
 		const clean = mine.find(r => r.state === "clean" && !r.normalized);
 		const shown = clean ?? mine.find(r => !r.normalized)!;
-		const matches = explainers.filter(e => mine.every(r => diagnostics(r.state, c) === diagnostics(r.state, e)));
-		differ.push(`${c} ${clean ? "" : "with planted errors "}+${shown.extra.length} / −${shown.missing.length}${matches.length ? ` (same as ${matches.join(", ")})` : ""}`);
+		const build = ownBuild(run, c);
+		const matches = build && ["clean", "broken"].every(s => sameOutput(run, project, s, c, build) !== false);
+		differ.push(`${c} ${clean ? "" : "with planted errors "}+${shown.extra.length} / −${shown.missing.length}${matches ? " (matches its upstream build)" : ""}`);
 	}
 	return [
 		`Same diagnostics as ${ref}, clean and with planted errors: ${same.length ? same.join(", ") : "none"}.`,
@@ -343,7 +409,7 @@ function races(run: Run): Map<string, string> {
 			if (lanes.length < 2) continue;
 			out.set(raceFile(p, race.suffix), raceSvg({
 				project: `${projectTitle(p)}, ${race.label}`,
-				subtitles: [...(size ? [size] : []), `Cold full type check in real time · ${m.machine.cpu}, ${m.machine.os} · median of ${m.iterations} runs`],
+				subtitles: [...(size ? [size] : []), `Fresh process, no incremental cache · real time · ${m.machine.cpu}, ${m.machine.os} · median of ${m.iterations} runs`],
 				columns: ["wall", `vs ${ref}`, "CPU", "peak memory"],
 				lanes,
 				footnotes: [...diagnosticsLines(run, p), `Medians. "vs ${ref}": ${ref}'s wall time divided by the checker's. CPU: user + system time across all threads. Peak memory: ${m.machine.platform === "win32" ? "peak working set" : "maximum resident set size"}.`, `+n / −m: diagnostics only in the checker / only in ${ref}.`],
@@ -371,6 +437,9 @@ function readmeBlock(run: Run, others: Run[]): string {
 		`Latest run: [\`${run.name}\`](results/${run.name}/report.md), ${m.machine.cpu}, ${m.machine.os}, ${m.started.slice(0, 10)}. Wall time is the median of ${m.iterations} runs (min–max); "vs ${ref}" is ${ref}'s median divided by the checker's. ¹: the checker reported errors where ${ref} reported none.`,
 		"",
 		...(m.note ? [`**Note:** ${m.note}`, ""] : []),
+		defaultThreadsLine(run),
+		"",
+		...notDropIn(run).flatMap(l => [l, ""]),
 		...raceImages(run, "", `results/${run.name}/`),
 		`The same races single-threaded, every checker with its documented one-thread flag: [in the run's report](results/${run.name}/report.md#single-threaded).`,
 		"",
@@ -387,12 +456,16 @@ function readmeBlock(run: Run, others: Run[]): string {
 		"",
 		timingTable(run, "matched", 1, threaded, ref),
 		"",
+		...(Math.max(...m.threadCounts) > 1
+			? [`### ${Math.max(...m.threadCounts)} threads`, "", `${threaded.join(", ")}, each set to ${Math.max(...m.threadCounts)} with its documented thread flag, one per core on this machine.`, "", timingTable(run, "matched", Math.max(...m.threadCounts), threaded, ref), ""]
+			: []),
 		"### Diagnostics compared with " + ref,
 		"",
 		correctnessTable(run),
 		"",
 		DIFF_LEGEND,
 		"",
+		...(ownBuildTable(run).length ? ["### Diagnostics compared with each checker's upstream build", "", "Checkers that port a different TypeScript build, compared byte for byte with that build's own output.", "", ...ownBuildTable(run), ""] : []),
 		`Full report, with every thread setting, the cold check, file lists and every diagnostic difference verbatim: [\`results/${run.name}/report.md\`](results/${run.name}/report.md).`,
 		...(others.length ? ["", "Latest run on other platforms: " + others.map(o => `[${o.meta.machine.platform}, ${o.meta.machine.cpu}](results/${o.name}/report.md)`).join(", ") + "."] : []),
 		END,

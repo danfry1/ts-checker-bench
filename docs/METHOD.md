@@ -6,8 +6,8 @@ What a run measures, how, and what it does not show. The numbers are in each run
 
 `node bench run` does the following, writing everything to `results/<date>-<cpu>-<os>/`:
 
-1. **Preflight.** It refuses to start on battery, with a checker or project missing, or with a project checkout that has local changes. It warns about busy processes, a high load average or a CPU speed limit, and records the warnings in `run.json`.
-2. **Records the setup.** It writes the machine, macOS and Node versions, each checker's package, `--version` output and native binary sha256, and tool-related environment variables to `run.json`. Each checker's `--help` output goes to `help/`.
+1. **Preflight.** It refuses to start on battery, with a checker or project missing or not fully installed, with a project checkout that has local changes, with `node_modules` in a directory above a checkout, or with Node running under Rosetta translation on Apple silicon. It warns about busy processes, a high load average or a CPU speed limit, and records the warnings in `run.json`.
+2. **Records the setup.** It writes the machine, OS and Node versions, each checker's package, `--version` output and native binary sha256, and tool-related environment variables to `run.json`. Each checker's `--help` output goes to `help/`.
 3. **For each project:**
    1. **Gate.** The reference checker (tsgo 7.0.2) runs the project's own typecheck command. A project with any error is recorded as rejected and not benchmarked. If the reference exits non-zero without reporting an error (killed, out of memory, crashed), the project is recorded as not measured instead, since that says nothing about the project (`gate/`).
    2. **Work counts.** The reference runs once more with `--extendedDiagnostics --singleThreaded`, untimed, and reports how many files, lines, types and instantiations the check involves (`work/`).
@@ -48,7 +48,7 @@ Every checker runs with its shipped defaults plus the project's own typecheck ar
 |---|---|---|---|
 | tsgo | Not stated in its `--help`. tsc-ts's and tsc-rs's READMEs both give tsgo's default as 4 checkers. | `--singleThreaded`, `--checkers N` | `tsc --help --all`; the tsc-ts and tsc-rs READMEs |
 | tsc-ts | "one checker per CPU it may run on (up to 16), and at least tsgo's four", fewer if memory is short | `--singleThreaded`, `--checkers N` | tsc-ts README |
-| tsc-rs | 4 checkers, as tsgo. Stated in the project's GitHub README (for 0.6.0: "`--checkers 8` (Go's option; the default is 4)"); 0.7.0's own README and `--help` do not state it. Its opt-in `--fast` mode, which raises the count, is not used. | `--singleThreaded`, `--checkers N` | `tsc --help --all`; [pingdotgg/ts-rust](https://github.com/pingdotgg/ts-rust) README |
+| tsc-rs | 4 checkers, as tsgo. Stated in the project's [GitHub README at the v0.7.0 tag](https://github.com/pingdotgg/ts-rust/blob/v0.7.0/README.md): "`--checkers 8` (Go's option; the default is 4)"; the README in the npm package and `--help` do not state it. Its opt-in `--fast` mode, which raises the count, is not used. | `--singleThreaded`, `--checkers N` | `tsc --help --all`; [pingdotgg/ts-rust README, v0.7.0](https://github.com/pingdotgg/ts-rust/blob/v0.7.0/README.md) |
 | tsrs | "every core up to 16, then at least 16 or half the cores, at most 32 checkers, capped for small programs" | `--singleThreaded`, `--checkers N` | [docs/COMPATIBILITY.md](https://github.com/oxc-project/tsrs/blob/main/docs/COMPATIBILITY.md); its `--help` refers to tsc's options for `--checkers` |
 | bun check | "one per CPU core" | `--threads=N` | `bun check --help` |
 
@@ -69,13 +69,20 @@ Recorded output has its absolute paths made machine-independent, the same way fo
 
 Every difference is listed verbatim in the report. The second run of each checker shows whether its output is deterministic; bun's printed elapsed time is masked first.
 
-The explain-only checker is upstream tsgo 7.1-dev, the build tsrs reports porting. Where tsc-rs or tsrs differ from tsgo 7.0.2 and tsgo 7.1-dev prints the same as they do, the difference comes from TypeScript 7.1-dev itself. It is never timed.
+tsc-rs and tsrs port TypeScript 7.1-dev, each from a different commit, so each is also compared with an explain-only checker: upstream tsgo built from the commit it ports. Those are never timed.
+
+| Checker | Ports TypeScript commit | Compared with | Source |
+|---|---|---|---|
+| tsc-rs 0.7.0 | `fed0bf24149f` | `typescript@7.1.0-dev.20261008.1` (its `gitHead` is that commit) | [README](https://github.com/pingdotgg/ts-rust/blob/v0.7.0/README.md) and [UPSTREAM.md](https://github.com/pingdotgg/ts-rust/blob/v0.7.0/UPSTREAM.md) at the v0.7.0 tag: "use `typescript@7.1.0-dev.20261008.1` (the same commit)" |
+| tsrs 0.16.0 | `b85298b6a81f` | `typescript@7.1.0-dev.20260930.4` (its `gitHead`, `9adc871ff47f`, is one commit later and changes only two CI pipeline files) | [COMPATIBILITY.md](https://github.com/oxc-project/tsrs/blob/main/docs/COMPATIBILITY.md): the binaries report "the npm nightly built from the pinned commit (7.1.0-dev.20260930.4)" |
+
+Where tsc-rs or tsrs differ from tsgo 7.0.2 and their upstream build prints the same, the difference comes from TypeScript 7.1-dev itself, not from the port. In run `2026-10-18-apple-m5-darwin`, both are byte-identical to their upstream builds on every project, clean and with planted errors. tsc-rs's build was added to that run on 2026-10-19, after its timings, by running the same diagnostics step with the same project commits; the run's checker table says so. Before that, tsc-rs was compared with tsrs's build, eight days older, and one type-fest message differed: a difference between the two TypeScript builds, not in tsc-rs.
 
 These comparisons cover the clean projects and the patched errors, nothing more. They do not show that the checkers are equivalent in general.
 
 ## Files
 
-tsgo, tsc-ts, tsc-rs and tsrs print their program's files with `--listFilesOnly`. The lists are compared after paths are made relative to the checkout, and after each checker's bundled `lib.*.d.ts` files are named `LIB/<file>` ([`normalizeFileList`](../bench/analysis.ts)). "Project files" are files outside `node_modules` and the lib files. bun documents no way to list its files; its `--timing` output gives counts of loaded and checked files, and only the loaded count can be compared.
+tsgo, tsc-ts, tsc-rs and tsrs print their program's files with `--listFilesOnly`. The lists are compared after paths are made relative to the checkout, and after each checker's bundled `lib.*.d.ts` files are named `LIB/<file>` ([`normalizeFileList`](../bench/analysis.ts)). "Project files" are files outside `node_modules` and the lib files. bun documents no way to list its files; its `--timing` output gives counts of loaded and checked files. Its loaded count matches tsgo's file count on every project. Its checked count leaves out files it does not type-check: JSON files, and declaration files when the project sets `skipLibCheck`, as tsc also skips checking them then. In run `2026-10-18-apple-m5-darwin`, Outline (`skipLibCheck` in its tsconfig) gave 2,315 project files − 17 `.d.ts` − 26 `.json` = 2,272 checked, and VS Code (`--skipLibCheck` in its command) 10,645 − 202 − 16 = 10,427, both exactly bun's count. type-fest sets `skipLibCheck: false`, and bun checked all 593 of its files. This is the arithmetic on tsgo's file lists, not a list from bun.
 
 ## Projects
 
@@ -88,11 +95,13 @@ The projects differ in kind as well as size, and file count is a poor guide to h
 - **One machine per run.** Results from other hardware or operating systems may differ. Each run records its machine, OS and platform.
 - **Background activity.** Preflight warns about it and the run records load, but other processes are not controlled.
 - **Between-session variation.** Medians can move by several percent between runs on the same machine. Compare runs before reading meaning into small differences.
-- **Versions differ.** tsc-rs and tsrs port TypeScript 7.1-dev, not 7.0.2, and are compared with tsgo 7.0.2. tsgo 7.1-dev is used to explain their diagnostics, but it is not timed.
+- **Versions differ.** tsc-rs and tsrs port TypeScript 7.1-dev, not 7.0.2, and are compared with tsgo 7.0.2. Upstream tsgo built from the commit each ports explains their diagnostics (see [Diagnostics](#diagnostics)); it is not timed.
 - **Early-version tools.** Several checkers are pre-1.0, and some describe themselves as experimental.
 - **Scope.** Only `--noEmit`-style full checks. Emit, `--incremental`, `--build`, `--watch` and editor use are not measured.
 - **Narrow error injection.** The patches add a handful of errors per project, so they exercise little of each checker.
 - **Peak memory differs by OS.** It is maximum RSS on macOS and Linux, and peak working set of the process alone on Windows.
+- **Peak memory depends on each tool's memory management.** A checker with a garbage collector, such as tsgo (Go), peaks where its collector lets it, so a higher peak does not always mean more live data. It is still the memory the machine had to provide.
+- **Fixed order within a round.** Every round runs the checkers in the same order, tsgo first, as listed in `checkers.json`. Each round is short, the machine is otherwise idle and the warm-up round comes first, but any effect of order, such as thermal state building up through a round, falls on the same checker each time.
 - **Platform coverage differs.** A checker that publishes no build for a platform, such as tsrs on Windows, is recorded as not available there.
 
 ## What this does not show

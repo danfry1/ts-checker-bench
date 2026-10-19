@@ -4,7 +4,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { PLATFORM, availableHere, binaryPath, checkers, project, projectDir } from "./config.ts";
-import { type Power, awakeWrapper, busyProcesses, cpuSpeedLimit, power, timingPrerequisites } from "./platform.ts";
+import { type Power, awakeWrapper, busyProcesses, cpuSpeedLimit, power, timingPrerequisites, underRosetta } from "./platform.ts";
 import { isInstalled } from "./setup.ts";
 import { git } from "./system.ts";
 
@@ -19,6 +19,7 @@ export interface Preflight {
 
 export function preflight(projectNames: string[]): Preflight {
 	const blocking: string[] = [...timingPrerequisites()];
+	if (underRosetta()) blocking.push("Node is running under Rosetta (x64 on Apple silicon), so the checkers' x64 builds would be timed translated: use an arm64 Node");
 	const warnings: string[] = [];
 	const p = power();
 	if (p.source !== "AC") blocking.push(`on battery (${p.charge}%): plug in; battery power changes performance and can end in sleep`);

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 348" width="880" height="348" role="img" aria-labelledby="t d">
 <title id="t">Outline, single-threaded: wall time of one full type check</title>
-<desc id="d">2,315 project files · tsgo creates 0.6 M types and 5.8 M instantiations. Cold full type check in real time · Apple M5, macOS 26.5.1 (25F80) · median of 7 runs. tsgo: wall 7.99 s, vs tsgo 1.0×, CPU 9.6 s, peak memory 2.3 GiB; tsc-ts: wall 3.50 s, vs tsgo 2.3×, CPU 3.5 s, peak memory 1.4 GiB; bun: wall 3.31 s, vs tsgo 2.4×, CPU 3.3 s, peak memory 1.0 GiB; tsc-rs: wall 3.23 s, vs tsgo 2.5×, CPU 3.2 s, peak memory 1.3 GiB; tsrs: wall 2.16 s, vs tsgo 3.7×, CPU 2.2 s, peak memory 0.6 GiB.</desc>
+<desc id="d">2,315 project files · tsgo creates 0.6 M types and 5.8 M instantiations. Fresh process, no incremental cache · real time · Apple M5, macOS 26.5.1 (25F80) · median of 7 runs. tsgo: wall 7.99 s, vs tsgo 1.0×, CPU 9.6 s, peak memory 2.3 GiB; tsc-ts: wall 3.50 s, vs tsgo 2.3×, CPU 3.5 s, peak memory 1.4 GiB; bun: wall 3.31 s, vs tsgo 2.4×, CPU 3.3 s, peak memory 1.0 GiB; tsc-rs: wall 3.23 s, vs tsgo 2.5×, CPU 3.2 s, peak memory 1.3 GiB; tsrs: wall 2.16 s, vs tsgo 3.7×, CPU 2.2 s, peak memory 0.6 GiB.</desc>
 <style>
 text{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:13px;fill:#1f2328}
 .bg{fill:#ffffff;stroke:#d1d9e0}.track{fill:#eff2f5}
@@ -28,7 +28,7 @@ text{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,san
 <rect class="bg" x="0.5" y="0.5" width="879" height="347" rx="6"/>
 <text class="title" x="16" y="28">Outline, single-threaded</text>
 <text class="sub" x="16" y="48">2,315 project files · tsgo creates 0.6 M types and 5.8 M instantiations</text>
-<text class="sub" x="16" y="66">Cold full type check in real time · Apple M5, macOS 26.5.1 (25F80) · median of 7 runs</text>
+<text class="sub" x="16" y="66">Fresh process, no incremental cache · real time · Apple M5, macOS 26.5.1 (25F80) · median of 7 runs</text>
 <text class="sub" x="603" y="90" text-anchor="end">wall</text>
 <text class="sub" x="690" y="90" text-anchor="end">vs tsgo</text>
 <text class="sub" x="777" y="90" text-anchor="end">CPU</text>
@@ -79,7 +79,7 @@ text{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,san
 <text class="value" x="864" y="241" text-anchor="end">0.6 GiB</text>
 </g>
 <text class="foot" x="16" y="278">Same diagnostics as tsgo, clean and with planted errors: tsc-ts, bun.</text>
-<text class="foot" x="16" y="296">Different: tsc-rs +1 / −0 (same as tsgo-7.1-dev) · tsrs +1 / −0 (same as tsgo-7.1-dev).</text>
+<text class="foot" x="16" y="296">Different: tsc-rs +1 / −0 (matches its upstream build) · tsrs +1 / −0 (matches its upstream build).</text>
 <text class="foot" x="16" y="314">Medians. "vs tsgo": tsgo's wall time divided by the checker's. CPU: user + system time across all threads. Peak memory: maximum resident set size.</text>
 <text class="foot" x="16" y="332">+n / −m: diagnostics only in the checker / only in tsgo.</text>
 </svg>
