@@ -1,17 +1,19 @@
 // node bench report: builds results/<run>/report.md from a run's raw files, and the README
-// block between <!-- results:start --> and <!-- results:end --> from the latest run.
+// block between <!-- results:start --> and <!-- results:end --> and site/index.html from the latest run.
 // With check, writes nothing and fails if either is out of date.
 import fs from "node:fs";
 import path from "node:path";
 import { RESULTS_DIR, ROOT, checkers as configured, projects as configuredProjects } from "./config.ts";
 import { type Summary, countFiles, lineDiff, maskElapsed, normalizeDiagnostics, normalizeFileList, parseBunTiming, parseWorkStats, ratio, summarize } from "./analysis.ts";
 import { COLOURS, raceSvg } from "./race.ts";
+import { siteHtml } from "./site.ts";
 import { type Gate, type Run, gateOutcome, listRuns, loadRun } from "./results.ts";
 
 const README = path.join(ROOT, "README.md");
+const SITE_DIR = path.join(ROOT, "site");
 const START = "<!-- results:start -->";
 const END = "<!-- results:end -->";
-const DIFF_LEGEND = "+n / −m: after normalising, n diagnostics only in that checker and m only in the reference. Every difference is listed verbatim in the run's report.";
+export const DIFF_LEGEND = "+n / −m: after normalising, n diagnostics only in that checker and m only in the reference. Every difference is listed verbatim in the run's report.";
 
 /** Summary of the timed runs (not warm-ups) for one project, phase, checker and thread setting. */
 export function stat(run: Run, project: string, phase: string, checker: string, threads: string | number = "default"): Summary | null {
@@ -20,7 +22,7 @@ export function stat(run: Run, project: string, phase: string, checker: string, 
 }
 
 const range = (s: Summary) => `${s.median.toFixed(2)} (${s.min.toFixed(2)}–${s.max.toFixed(2)})`;
-const benchmarked = (run: Run) => run.meta.projects.filter(p => gateOutcome(p.gate) === "passed").map(p => p.name);
+export const benchmarked = (run: Run) => run.meta.projects.filter(p => gateOutcome(p.gate) === "passed").map(p => p.name);
 
 function gateCell(run: Run, project: string, g: Gate): string {
 	const first = `\`${(run.read("gate", `${project}.txt`) ?? "").split("\n")[0].replaceAll("|", "\\|")}\``;
@@ -33,14 +35,14 @@ function gateCell(run: Run, project: string, g: Gate): string {
 			return `**not measured**: the reference did not finish (${g.signal ? `killed by ${g.signal}` : `exit ${g.exit}, no diagnostics`})`;
 	}
 }
-const timedNames = (run: Run) => run.meta.checkers.filter(c => c.role !== "explain" && c.available !== false).map(c => c.name);
+export const timedNames = (run: Run) => run.meta.checkers.filter(c => c.role !== "explain" && c.available !== false).map(c => c.name);
 const unavailableNote = (run: Run) => {
 	const missing = run.meta.checkers.filter(c => c.available === false).map(c => c.name);
 	return missing.length ? [`Not available on ${run.meta.machine.platform}: ${missing.join(", ")} (no published build).`, ""] : [];
 };
 const availableNames = (run: Run) => run.meta.checkers.filter(c => c.available !== false).map(c => c.name);
-const referenceName = (run: Run) => run.meta.checkers.find(c => c.role === "reference")!.name;
-const hasThreadFlag = (name: string) => Boolean(configured.find(c => c.name === name)?.threads);
+export const referenceName = (run: Run) => run.meta.checkers.find(c => c.role === "reference")!.name;
+export const hasThreadFlag = (name: string) => Boolean(configured.find(c => c.name === name)?.threads);
 
 // ---------------------------------------------------------------------------- diagnostics
 
@@ -89,7 +91,7 @@ export function parity(run: Run, project: string): ParityResult[] {
 	return results;
 }
 
-const verdict = (r: ParityResult | undefined) => (!r ? "–" : r.raw ? "byte-identical" : r.normalized ? "same after normalising" : `+${r.extra.length} / −${r.missing.length}`);
+export const verdict = (r: ParityResult | undefined) => (!r ? "–" : r.raw ? "byte-identical" : r.normalized ? "same after normalising" : `+${r.extra.length} / −${r.missing.length}`);
 
 // ---------------------------------------------------------------------------- files
 
@@ -255,8 +257,8 @@ function reportMarkdown(run: Run): string {
 
 // ---------------------------------------------------------------------------- race animation
 
-const millions = (n: number) => `${(n / 1e6).toFixed(1)} M`;
-const workStats = (run: Run, project: string) => {
+export const millions = (n: number) => `${(n / 1e6).toFixed(1)} M`;
+export const workStats = (run: Run, project: string) => {
 	const text = run.read("work", `${project}.txt`);
 	return text === null ? null : parseWorkStats(text);
 };
@@ -290,16 +292,16 @@ const RACES = [
 ] as const;
 
 const raceFile = (project: string, suffix: string) => `race-${project}${suffix}.svg`;
-const projectTitle = (name: string) => configuredProjects.find(p => p.name === name)?.title ?? name;
+export const projectTitle = (name: string) => configuredProjects.find(p => p.name === name)?.title ?? name;
 
 /** The explain-only checker that is the TypeScript build this checker ports, if the run has it. */
-function ownBuild(run: Run, checker: string): string | undefined {
+export function ownBuild(run: Run, checker: string): string | undefined {
 	const inRun = new Set(run.meta.checkers.filter(c => c.role === "explain" && c.available !== false).map(c => c.name));
 	return configured.find(c => c.role === "explain" && c.explains?.includes(checker) && inRun.has(c.name))?.name;
 }
 
 /** Whether two checkers printed byte-identical output on a project and state; undefined if either is missing. */
-function sameOutput(run: Run, project: string, state: string, a: string, b: string): boolean | undefined {
+export function sameOutput(run: Run, project: string, state: string, a: string, b: string): boolean | undefined {
 	const x = run.read("parity", project, `${state}.${a}.txt`);
 	const y = run.read("parity", project, `${state}.${b}.txt`);
 	return x === null || y === null ? undefined : x === y;
@@ -322,7 +324,7 @@ function ownBuildTable(run: Run): string[] {
 }
 
 /** Checkers that report errors the reference doesn't on a clean project, with counts per project. */
-function notDropIn(run: Run): string[] {
+export function notDropIn(run: Run): string[] {
 	const ref = referenceName(run);
 	const refVersion = run.meta.checkers.find(c => c.name === ref)?.package.split("@").pop();
 	const byChecker = new Map<string, string>();
@@ -352,7 +354,7 @@ function notDropIn(run: Run): string[] {
 
 /** Each checker's documented default thread count, grouped, on this machine. */
 /** Short form for the charts: "tsgo and tsc-rs 4 checkers; tsc-ts, tsrs and bun one per core (10)". */
-function defaultThreadParts(run: Run, short = false): string[] {
+export function defaultThreadParts(run: Run, short = false): string[] {
 	const cpus = run.meta.machine.cpus;
 	const list = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}` : xs.join(""));
 	const fixed = new Map<number, string[]>();
@@ -369,14 +371,14 @@ function defaultThreadParts(run: Run, short = false): string[] {
 }
 
 /** On this machine: each checker's documented default thread count. */
-const defaultThreadsLine = (run: Run) => `Default threading differs: ${defaultThreadParts(run).join("; ")} ([sources](docs/METHOD.md#threads)).`;
+export const defaultThreadsLine = (run: Run) => `Default threading differs: ${defaultThreadParts(run).join("; ")} ([sources](docs/METHOD.md#threads)).`;
 
 /**
  * How each checker's diagnostics compare with the reference's on this project: the checkers that
  * match, then the others, each noting whether it matches an explain-only checker instead (for
  * example tsgo 7.1-dev, the TypeScript version tsc-rs and tsrs port).
  */
-function diagnosticsLines(run: Run, project: string): string[] {
+export function diagnosticsLines(run: Run, project: string): string[] {
 	const ref = referenceName(run);
 	const results = parity(run, project);
 	const same: string[] = [];
@@ -399,12 +401,15 @@ function diagnosticsLines(run: Run, project: string): string[] {
 	];
 }
 
+/** Colour per timed checker, so a checker has the same colour in every chart and on the site. */
+export const checkerColours = (run: Run): Record<string, string> => Object.fromEntries(timedNames(run).map((c, i) => [c, COLOURS[i % COLOURS.length]]));
+
 /** results/<run>/race-<project>[-single-threaded].svg: the medians of one project, animated. */
 function races(run: Run): Map<string, string> {
 	const ref = referenceName(run);
 	const m = run.meta;
 	const names = timedNames(run);
-	const colours = Object.fromEntries(names.map((c, i) => [c, COLOURS[i % COLOURS.length]]));
+	const colours = checkerColours(run);
 	const out = new Map<string, string>();
 	for (const p of benchmarked(run)) {
 		const refFiles = files(run, p).find(f => f.checker === ref);
@@ -540,4 +545,6 @@ export function report(name?: string, { check = false }: { check?: boolean } = {
 	const [before, rest] = fs.readFileSync(README, "utf8").split(START);
 	if (rest === undefined) throw new Error(`README.md has no ${START} marker`);
 	writeOrCheck(README, before + readmeBlock(latest, [...byPlatform.values()], earlier) + rest.split(END)[1], check);
+	if (!check) fs.mkdirSync(SITE_DIR, { recursive: true });
+	writeOrCheck(path.join(SITE_DIR, "index.html"), siteHtml(latest), check);
 }

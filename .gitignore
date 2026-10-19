@@ -9,3 +9,6 @@ node_modules/
 
 # Raw results can include .log files; track them even where a global ignore excludes *.log
 !*.log
+
+# Vercel project link for site/
+.vercel/
