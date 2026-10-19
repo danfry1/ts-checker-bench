@@ -24,9 +24,9 @@ export interface RaceData {
 	colours: Record<string, string>;
 }
 
-const WIDTH = 880;
+const WIDTH = 920;
 const TRACK_START = 90;
-const TRACK_END = 500;
+const TRACK_END = 470;
 const BAR_HEIGHT = 16;
 const LANE_HEIGHT = 30;
 /** Seconds the finished state is held before the race restarts. */

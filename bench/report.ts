@@ -411,9 +411,9 @@ function races(run: Run): Map<string, string> {
 			out.set(raceFile(p, race.suffix), raceSvg({
 				project: `${projectTitle(p)}, ${race.label}`,
 				subtitles: [...(size ? [size] : []), `Fresh process, no incremental cache · real time · ${m.machine.cpu}, ${m.machine.os} · median of ${m.iterations} runs`],
-				columns: ["wall", `vs ${ref}`, "CPU", "peak memory"],
+				columns: ["wall time", `vs ${ref}`, "CPU time", "peak memory"],
 				lanes,
-				footnotes: [...diagnosticsLines(run, p), `Medians. "vs ${ref}": ${ref}'s wall time divided by the checker's. CPU: user + system time across all threads. Peak memory: ${m.machine.platform === "win32" ? "peak working set" : "maximum resident set size"}.`, `+n / −m: diagnostics only in the checker / only in ${ref}.`],
+				footnotes: [...diagnosticsLines(run, p), `Medians. "vs ${ref}": ${ref}'s wall time divided by the checker's. CPU time: user + system, across all threads. Peak memory: ${m.machine.platform === "win32" ? "peak working set" : "maximum resident set size"}.`, `+n / −m: diagnostics only in the checker / only in ${ref}.`],
 				colours,
 			}));
 		}

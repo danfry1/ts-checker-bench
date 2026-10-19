@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 348" width="880" height="348" role="img" aria-labelledby="t d">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 348" width="920" height="348" role="img" aria-labelledby="t d">
 <title id="t">type-fest, default threading: wall time of one full type check</title>
-<desc id="d">502 project files · tsgo creates 5.9 M types and 17.8 M instantiations. Fresh process, no incremental cache · real time · Apple M5, macOS 26.5.1 (25F80) · median of 7 runs. tsgo: wall 7.44 s, vs tsgo 1.0×, CPU 27.7 s, peak memory 8.2 GiB; tsc-rs: wall 2.19 s, vs tsgo 3.4×, CPU 4.5 s, peak memory 4.0 GiB; tsrs: wall 1.70 s, vs tsgo 4.4×, CPU 7.1 s, peak memory 1.8 GiB; tsc-ts: wall 1.67 s, vs tsgo 4.5×, CPU 10.9 s, peak memory 6.0 GiB; bun: wall 1.37 s, vs tsgo 5.4×, CPU 5.6 s, peak memory 1.4 GiB.</desc>
+<desc id="d">502 project files · tsgo creates 5.9 M types and 17.8 M instantiations. Fresh process, no incremental cache · real time · Apple M5, macOS 26.5.1 (25F80) · median of 7 runs. tsgo: wall time 7.44 s, vs tsgo 1.0×, CPU time 27.7 s, peak memory 8.2 GiB; tsc-rs: wall time 2.19 s, vs tsgo 3.4×, CPU time 4.5 s, peak memory 4.0 GiB; tsrs: wall time 1.70 s, vs tsgo 4.4×, CPU time 7.1 s, peak memory 1.8 GiB; tsc-ts: wall time 1.67 s, vs tsgo 4.5×, CPU time 10.9 s, peak memory 6.0 GiB; bun: wall time 1.37 s, vs tsgo 5.4×, CPU time 5.6 s, peak memory 1.4 GiB.</desc>
 <style>
 text{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:13px;fill:#1f2328}
 .bg{fill:#ffffff;stroke:#d1d9e0}.track{fill:#eff2f5}
@@ -25,61 +25,61 @@ text{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,san
 @media (prefers-color-scheme:dark){.bg{fill:#0d1117;stroke:#3d444d}.track{fill:#21262d}text{fill:#e6edf3}.sub,.foot{fill:#9198a1}}
 @media (prefers-reduced-motion:reduce){.bar,.value{animation:none}}
 </style>
-<rect class="bg" x="0.5" y="0.5" width="879" height="347" rx="6"/>
+<rect class="bg" x="0.5" y="0.5" width="919" height="347" rx="6"/>
 <text class="title" x="16" y="28">type-fest, default threading</text>
 <text class="sub" x="16" y="48">502 project files · tsgo creates 5.9 M types and 17.8 M instantiations</text>
 <text class="sub" x="16" y="66">Fresh process, no incremental cache · real time · Apple M5, macOS 26.5.1 (25F80) · median of 7 runs</text>
-<text class="sub" x="603" y="90" text-anchor="end">wall</text>
-<text class="sub" x="690" y="90" text-anchor="end">vs tsgo</text>
-<text class="sub" x="777" y="90" text-anchor="end">CPU</text>
-<text class="sub" x="864" y="90" text-anchor="end">peak memory</text>
+<text class="sub" x="591" y="90" text-anchor="end">wall time</text>
+<text class="sub" x="695" y="90" text-anchor="end">vs tsgo</text>
+<text class="sub" x="800" y="90" text-anchor="end">CPU time</text>
+<text class="sub" x="904" y="90" text-anchor="end">peak memory</text>
 <g class="l0">
 <text class="name" x="16" y="121">tsgo</text>
-<rect class="track" x="90" y="109" width="410" height="16" rx="4"/>
-<rect class="bar" x="90" y="109" width="410" height="16" rx="4" fill="#8a8f98" style="transform:scaleX(1.0000)"/>
-<text class="value" x="603" y="121" text-anchor="end">7.44 s</text>
-<text class="value" x="690" y="121" text-anchor="end">1.0×</text>
-<text class="value" x="777" y="121" text-anchor="end">27.7 s</text>
-<text class="value" x="864" y="121" text-anchor="end">8.2 GiB</text>
+<rect class="track" x="90" y="109" width="380" height="16" rx="4"/>
+<rect class="bar" x="90" y="109" width="380" height="16" rx="4" fill="#8a8f98" style="transform:scaleX(1.0000)"/>
+<text class="value" x="591" y="121" text-anchor="end">7.44 s</text>
+<text class="value" x="695" y="121" text-anchor="end">1.0×</text>
+<text class="value" x="800" y="121" text-anchor="end">27.7 s</text>
+<text class="value" x="904" y="121" text-anchor="end">8.2 GiB</text>
 </g>
 <g class="l1">
 <text class="name" x="16" y="151">tsc-rs</text>
-<rect class="track" x="90" y="139" width="410" height="16" rx="4"/>
-<rect class="bar" x="90" y="139" width="410" height="16" rx="4" fill="#e8743b" style="transform:scaleX(0.2944)"/>
-<text class="value" x="603" y="151" text-anchor="end">2.19 s</text>
-<text class="value" x="690" y="151" text-anchor="end">3.4×</text>
-<text class="value" x="777" y="151" text-anchor="end">4.5 s</text>
-<text class="value" x="864" y="151" text-anchor="end">4.0 GiB</text>
+<rect class="track" x="90" y="139" width="380" height="16" rx="4"/>
+<rect class="bar" x="90" y="139" width="380" height="16" rx="4" fill="#e8743b" style="transform:scaleX(0.2944)"/>
+<text class="value" x="591" y="151" text-anchor="end">2.19 s</text>
+<text class="value" x="695" y="151" text-anchor="end">3.4×</text>
+<text class="value" x="800" y="151" text-anchor="end">4.5 s</text>
+<text class="value" x="904" y="151" text-anchor="end">4.0 GiB</text>
 </g>
 <g class="l2">
 <text class="name" x="16" y="181">tsrs</text>
-<rect class="track" x="90" y="169" width="410" height="16" rx="4"/>
-<rect class="bar" x="90" y="169" width="410" height="16" rx="4" fill="#19a979" style="transform:scaleX(0.2285)"/>
-<text class="value" x="603" y="181" text-anchor="end">1.70 s</text>
-<text class="value" x="690" y="181" text-anchor="end">4.4×</text>
-<text class="value" x="777" y="181" text-anchor="end">7.1 s</text>
-<text class="value" x="864" y="181" text-anchor="end">1.8 GiB</text>
+<rect class="track" x="90" y="169" width="380" height="16" rx="4"/>
+<rect class="bar" x="90" y="169" width="380" height="16" rx="4" fill="#19a979" style="transform:scaleX(0.2285)"/>
+<text class="value" x="591" y="181" text-anchor="end">1.70 s</text>
+<text class="value" x="695" y="181" text-anchor="end">4.4×</text>
+<text class="value" x="800" y="181" text-anchor="end">7.1 s</text>
+<text class="value" x="904" y="181" text-anchor="end">1.8 GiB</text>
 </g>
 <g class="l3">
 <text class="name" x="16" y="211">tsc-ts</text>
-<rect class="track" x="90" y="199" width="410" height="16" rx="4"/>
-<rect class="bar" x="90" y="199" width="410" height="16" rx="4" fill="#3178c6" style="transform:scaleX(0.2245)"/>
-<text class="value" x="603" y="211" text-anchor="end">1.67 s</text>
-<text class="value" x="690" y="211" text-anchor="end">4.5×</text>
-<text class="value" x="777" y="211" text-anchor="end">10.9 s</text>
-<text class="value" x="864" y="211" text-anchor="end">6.0 GiB</text>
+<rect class="track" x="90" y="199" width="380" height="16" rx="4"/>
+<rect class="bar" x="90" y="199" width="380" height="16" rx="4" fill="#3178c6" style="transform:scaleX(0.2245)"/>
+<text class="value" x="591" y="211" text-anchor="end">1.67 s</text>
+<text class="value" x="695" y="211" text-anchor="end">4.5×</text>
+<text class="value" x="800" y="211" text-anchor="end">10.9 s</text>
+<text class="value" x="904" y="211" text-anchor="end">6.0 GiB</text>
 </g>
 <g class="l4">
 <text class="name" x="16" y="241">bun</text>
-<rect class="track" x="90" y="229" width="410" height="16" rx="4"/>
-<rect class="bar" x="90" y="229" width="410" height="16" rx="4" fill="#c94fb6" style="transform:scaleX(0.1841)"/>
-<text class="value" x="603" y="241" text-anchor="end">1.37 s</text>
-<text class="value" x="690" y="241" text-anchor="end">5.4×</text>
-<text class="value" x="777" y="241" text-anchor="end">5.6 s</text>
-<text class="value" x="864" y="241" text-anchor="end">1.4 GiB</text>
+<rect class="track" x="90" y="229" width="380" height="16" rx="4"/>
+<rect class="bar" x="90" y="229" width="380" height="16" rx="4" fill="#c94fb6" style="transform:scaleX(0.1841)"/>
+<text class="value" x="591" y="241" text-anchor="end">1.37 s</text>
+<text class="value" x="695" y="241" text-anchor="end">5.4×</text>
+<text class="value" x="800" y="241" text-anchor="end">5.6 s</text>
+<text class="value" x="904" y="241" text-anchor="end">1.4 GiB</text>
 </g>
 <text class="foot" x="16" y="278">Same diagnostics as tsgo, clean and with planted errors: tsc-ts, bun.</text>
 <text class="foot" x="16" y="296">Different: tsc-rs with planted errors +1 / −1 (matches its upstream build) · tsrs with planted errors +1 / −1 (matches its upstream build).</text>
-<text class="foot" x="16" y="314">Medians. "vs tsgo": tsgo's wall time divided by the checker's. CPU: user + system time across all threads. Peak memory: maximum resident set size.</text>
+<text class="foot" x="16" y="314">Medians. "vs tsgo": tsgo's wall time divided by the checker's. CPU time: user + system, across all threads. Peak memory: maximum resident set size.</text>
 <text class="foot" x="16" y="332">+n / −m: diagnostics only in the checker / only in tsgo.</text>
 </svg>
