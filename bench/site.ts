@@ -12,10 +12,8 @@ import {
 	benchmarked,
 	checkerColours,
 	defaultThreadsLine,
-	diagnosticsLines,
 	files,
 	millions,
-	notDropIn,
 	ownBuild,
 	parity,
 	projectTitle,
@@ -139,6 +137,45 @@ function overview(run: Run, ss: Setting[]): string {
 		.join("\n");
 }
 
+/** One plain line under a project's chart: whose diagnostics differ from the reference's here, and why. */
+function projectDiagnostics(run: Run, p: string): string {
+	const ref = referenceName(run);
+	const refVersion = run.meta.checkers.find(c => c.name === ref)?.package.split("@").pop() ?? "";
+	const results = parity(run, p);
+	const groups = new Map<string, { cs: string[]; extra: number; missing: number; changed: number; plantedOnly: boolean; upstream: boolean }>();
+	for (const c of timedNames(run).filter(c => c !== ref)) {
+		const mine = results.filter(r => r.checker === c);
+		const ds = mine.filter(r => !r.normalized).map(r => differences(r.extra, r.missing));
+		if (!ds.length) continue;
+		const build = ownBuild(run, c);
+		const g = {
+			extra: Math.max(...ds.map(d => d.extra)),
+			missing: Math.max(...ds.map(d => d.missing)),
+			changed: Math.max(...ds.map(d => d.changed)),
+			plantedOnly: mine.filter(r => r.state === "clean").every(r => r.normalized),
+			upstream: build !== undefined && ["clean", "broken"].every(s => sameOutput(run, p, s, c, build) === true),
+		};
+		const key = JSON.stringify(g);
+		groups.set(key, { ...g, cs: [...(groups.get(key)?.cs ?? []), c] });
+	}
+	const list = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}` : xs.join(""));
+	const details = `(<a href="#diagnostics">details</a>)`;
+	if (!groups.size) return `Every checker reports the same errors as ${esc(ref)} here ${details}.`;
+	return [...groups.values()]
+		.map(g => {
+			const many = g.cs.length > 1;
+			const parts = [
+				...(g.extra ? [`${many ? "report" : "reports"} ${g.extra} ${g.extra === 1 ? "error" : "errors"} that ${esc(ref)} ${refVersion} does not`] : []),
+				...(g.missing ? [`${many ? "miss" : "misses"} ${g.missing} ${g.missing === 1 ? "error" : "errors"} that ${esc(ref)} reports`] : []),
+				...(g.changed ? [`${many ? "print" : "prints"} ${g.changed === 1 ? "one type" : `${g.changed} types`} differently in ${g.changed === 1 ? "a message" : "messages"}`] : []),
+			];
+			const upstream = g.upstream ? `; ${many ? "their" : "its"} upstream TypeScript ${many ? "builds print" : "build prints"} exactly the same` : "";
+			return `${esc(list(g.cs))} ${parts.join(" and ")}${g.plantedOnly ? " with the planted errors" : ""}${upstream}.`;
+		})
+		.join(" ")
+		.replace(/\.$/, ` ${details}.`);
+}
+
 function projectSection(run: Run, p: string, ss: Setting[], lead: boolean): string {
 	const ref = referenceName(run);
 	const cfg = configuredProjects.find(x => x.name === p);
@@ -156,7 +193,7 @@ function projectSection(run: Run, p: string, ss: Setting[], lead: boolean): stri
 </div>
 <p class="sub">${esc(cfg?.description ?? "")}. ${size}</p>
 ${ss.map((s, i) => race(run, p, s, i !== 0)).join("\n")}
-<p class="diag">${diagnosticsLines(run, p).map(inline).join(" ")}</p>
+<p class="diag">${projectDiagnostics(run, p)}</p>
 <p class="small">Checked with <code>${esc(meta.args.join(" "))}</code> at <a href="${meta.repo}/tree/${meta.sha}"><code>${meta.sha.slice(0, 12)}</code></a>, from ${esc(meta.argsSource)}. Raw: <a href="${blob(`results/${run.name}/timing.csv`)}">timings</a>, <a href="${tree(`results/${run.name}/parity/${p}`)}">diagnostics</a>, <a href="${tree(`results/${run.name}/files/${p}`)}">file lists</a>${w ? `, <a href="${blob(`results/${run.name}/work/${p}.txt`)}">work counts</a>` : ""}.</p>
 </section>`;
 }
@@ -272,20 +309,24 @@ ${gridRows.join("\n")}
 
 function checkersSection(run: Run): string {
 	const cpus = run.meta.machine.cpus;
-	const rows = run.meta.checkers.map(c => {
-		const cfg = configured.find(x => x.name === c.name);
-		const d = cfg?.defaultThreads;
-		const threads = c.role === "explain" ? "diagnostics only, not timed" : d === "per-core" ? `one per core (${cpus} here)` : typeof d === "number" ? `${d} checkers` : "–";
-		const flag = cfg?.threads ? `<code>${esc(cfg.threads.one.join(" "))}</code><br><code>${esc(cfg.threads.n.join(" "))}</code>` : "–";
-		const pkg = c.package.replace(/@([^@]+)$/, "");
-		return `<tr><th scope="row">${esc(c.name)}${c.role === "reference" ? '<span class="tag">reference</span>' : ""}</th><td><a href="https://www.npmjs.com/package/${esc(pkg)}"><code>${esc(c.package)}</code></a><div class="small">${esc(cfg?.description ?? "")}</div></td><td>${threads}</td><td>${flag}</td></tr>`;
-	});
+	const pkgLink = (pkg: string) => `<a href="https://www.npmjs.com/package/${esc(pkg.replace(/@([^@]+)$/, ""))}"><code>${esc(pkg)}</code></a>`;
+	const items = run.meta.checkers
+		.filter(c => c.role !== "explain")
+		.map(c => {
+			const cfg = configured.find(x => x.name === c.name);
+			const d = cfg?.defaultThreads;
+			const threads = d === "per-core" ? `one per core (${cpus} here)` : typeof d === "number" ? `${d} checkers` : "not documented";
+			const flags = cfg?.threads ? `<code>${esc(cfg.threads.one.join(" "))}</code> and <code>${esc(cfg.threads.n.join(" ").replace("{n}", "N"))}</code>` : "none documented";
+			const here = c.available === false ? ` Not available on ${esc(run.meta.machine.platform)}.` : "";
+			return `<li><span class="who">${esc(c.name)}${c.role === "reference" ? '<span class="tag">reference</span>' : ""}</span><div>${pkgLink(c.package)}<p>${esc(cfg?.description ?? "")}.${here}</p><p class="small">Default threading: ${threads}. Thread flags used: ${flags}.</p></div></li>`;
+		});
+	const explain = run.meta.checkers
+		.filter(c => c.role === "explain" && c.available !== false)
+		.map(c => `${pkgLink(c.package)}, the build ${esc((configured.find(x => x.name === c.name)?.explains ?? []).join(" and "))} ${(configured.find(x => x.name === c.name)?.explains ?? []).length > 1 ? "port" : "ports"}`);
 	return `<section id="checkers">
 <h2>Checkers</h2>
-<div class="scroll"><table class="grid wrap">
-<thead><tr><th>Checker</th><th>Package</th><th>Default threading</th><th>Thread flags used</th></tr></thead>
-<tbody>${rows.join("\n")}</tbody>
-</table></div>
+<ul class="verdicts checkers">${items.join("\n")}</ul>
+${explain.length ? `<p class="small">Diagnostics only, never timed: upstream tsgo ${explain.join("; ")}.</p>` : ""}
 <p class="small">Thread defaults and flags as each checker documents them (<a href="${blob("docs/METHOD.md")}#threads">sources</a>). Each binary's version output and sha256 are in <a href="${blob(`results/${run.name}/run.json`)}">run.json</a>.</p>
 </section>`;
 }
@@ -424,6 +465,14 @@ main>section:last-child{border-bottom:0}
 .detail summary{cursor:pointer;color:var(--link);font-size:15px;width:max-content}
 .dtable tbody+tbody{margin-top:0}
 .dgrid .dtable{margin-top:6px}
+.threadnote{font-size:14px;color:var(--dim);margin:18px 0 0;max-width:80ch}
+pre{background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:14px 16px;overflow-x:auto;margin:14px 0}
+pre code{font-size:13.5px;line-height:1.6;overflow-wrap:normal;white-space:pre}
+.checkers .who{font-size:16px}
+.checkers p{margin:4px 0 0}
+.checkers code{white-space:nowrap}
+.verdicts a code,.small a code{color:var(--link)}
+.checkers .small{margin-top:4px}
 .legend{display:flex;flex-wrap:wrap;gap:6px 22px;max-width:none}
 .legend b{margin-right:6px}
 .tag{font-size:11.5px;font-weight:500;color:var(--dim);margin-left:8px}
@@ -446,6 +495,7 @@ footer{color:var(--dim);font-size:14px;padding-top:28px;padding-bottom:56px}
  .facts{grid-template-columns:1fr;gap:2px}.facts dd{margin-bottom:10px}
  .lede{font-size:17px}
  .verdicts li{grid-template-columns:1fr;gap:2px}
+ pre code{font-size:12.5px}
  .dgrid{--lw:66px;--tw:calc((100vw - 40px - var(--lw) - (var(--n) + 2)*var(--gap)) / var(--n));--gap:3px}
  .tile{height:30px;font-size:12.5px}
  .dtable tbody th{font-size:14px;padding-right:4px}
@@ -519,8 +569,13 @@ const seen = new IntersectionObserver(entries => {
 	for (const e of entries) if (e.isIntersecting && !e.target.hidden && e.target.dataset.played !== setting) play(e.target);
 }, { threshold: 0.4 });
 document.querySelectorAll(".race").forEach(r => seen.observe(r));
-function choose(key) {
+function choose(key, fromUrl) {
 	setting = key;
+	if (!fromUrl) {
+		const u = new URL(location.href);
+		if (key === "default") u.searchParams.delete("threads"); else u.searchParams.set("threads", key.slice(1));
+		history.replaceState(null, "", u);
+	}
 	document.querySelectorAll("[data-setting]").forEach(el => { el.hidden = el.dataset.setting !== key; });
 	document.querySelectorAll(".seg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.key === key)));
 	document.querySelectorAll(".race:not([hidden])").forEach(r => {
@@ -530,6 +585,9 @@ function choose(key) {
 	});
 }
 document.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => choose(b.dataset.key)));
+// ?threads=1 opens the page at that setting, so a view can be linked.
+const fromUrl = new URLSearchParams(location.search).get("threads");
+if (fromUrl && document.querySelector('.seg button[data-key="t' + fromUrl + '"]')) choose("t" + fromUrl, true);
 document.querySelectorAll(".replay").forEach(b => b.addEventListener("click", () => {
 	const r = b.closest(".project").querySelector(".race:not([hidden])");
 	if (r) play(r);
@@ -582,16 +640,29 @@ export function siteHtml(run: Run): string {
 <span class="hint">Default: each checker as it ships.</span>
 </div></div>
 <main>
+<p class="threadnote">${inline(defaultThreadsLine(run))} The other settings give every checker the same thread count, set with its documented flag. ¹ marks a checker that reported errors where ${esc(ref)} reported none.</p>
 ${projects.map((p, i) => projectSection(run, p, ss, i === 0)).join("\n")}
 <section id="overview">
 <h2>All ${projects.length} projects against ${esc(ref)}</h2>
-<p>${esc(ref)}'s median wall time divided by each checker's: 2.0× means the checker took half as long. ${inline(defaultThreadsLine(run))} The other settings give every checker the same thread count, set with its documented flag.</p>
+<p>${esc(ref)}'s median wall time divided by each checker's, so 2.0× means the checker took half as long.</p>
 ${overview(run, ss)}
-<p class="small">¹ in the charts: the checker reported errors where ${esc(ref)} reported none. ${notDropIn(run).map(inline).join(" ")}</p>
 </section>
 ${diagnosticsSection(run)}
 ${checkersSection(run)}
 ${methodSection(run)}
+<section id="reproduce">
+<h2>Run it yourself</h2>
+<p>On macOS, Linux or Windows, with Node 22.18 or later and git, on a quiet machine on AC power. A full run takes about an hour on a 10-core Mac. <a href="${blob("AGENTS.md")}">AGENTS.md</a> has every prerequisite and step.</p>
+<pre><code>git clone ${REPO}
+cd ts-checker-bench
+(cd bench &amp;&amp; npm ci &amp;&amp; npm run check)
+# every checker and project, about 10 GB
+node bench setup
+# plugged in? anything busy?
+node bench preflight
+# writes results/&lt;date&gt;-&lt;cpu&gt;-&lt;os&gt;/
+node bench run</code></pre>
+</section>
 </main>
 <footer>
 <p>Generated by <code>node bench report</code> from <a href="${tree(`results/${run.name}`)}">results/${run.name}/</a>, run on ${m.started.slice(0, 10)}. CI checks that this page matches the raw results. Fixes land as new commits and published timings are never rewritten; to report one, <a href="${REPO}/issues/new/choose">open an issue</a>. <a href="${blob("LICENSE")}">MIT licence</a>.</p>

@@ -126,6 +126,14 @@ main>section:last-child{border-bottom:0}
 .detail summary{cursor:pointer;color:var(--link);font-size:15px;width:max-content}
 .dtable tbody+tbody{margin-top:0}
 .dgrid .dtable{margin-top:6px}
+.threadnote{font-size:14px;color:var(--dim);margin:18px 0 0;max-width:80ch}
+pre{background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:14px 16px;overflow-x:auto;margin:14px 0}
+pre code{font-size:13.5px;line-height:1.6;overflow-wrap:normal;white-space:pre}
+.checkers .who{font-size:16px}
+.checkers p{margin:4px 0 0}
+.checkers code{white-space:nowrap}
+.verdicts a code,.small a code{color:var(--link)}
+.checkers .small{margin-top:4px}
 .legend{display:flex;flex-wrap:wrap;gap:6px 22px;max-width:none}
 .legend b{margin-right:6px}
 .tag{font-size:11.5px;font-weight:500;color:var(--dim);margin-left:8px}
@@ -148,6 +156,7 @@ footer{color:var(--dim);font-size:14px;padding-top:28px;padding-bottom:56px}
  .facts{grid-template-columns:1fr;gap:2px}.facts dd{margin-bottom:10px}
  .lede{font-size:17px}
  .verdicts li{grid-template-columns:1fr;gap:2px}
+ pre code{font-size:12.5px}
  .dgrid{--lw:66px;--tw:calc((100vw - 40px - var(--lw) - (var(--n) + 2)*var(--gap)) / var(--n));--gap:3px}
  .tile{height:30px;font-size:12.5px}
  .dtable tbody th{font-size:14px;padding-right:4px}
@@ -174,6 +183,7 @@ footer{color:var(--dim);font-size:14px;padding-top:28px;padding-bottom:56px}
 <span class="hint">Default: each checker as it ships.</span>
 </div></div>
 <main>
+<p class="threadnote">Default threading differs: tsgo and tsc-rs default to 4 checkers; tsc-ts, tsrs and bun use one per core, up to 10 on this 10-core machine (<a href="https://github.com/danfry1/ts-checker-bench/blob/main/docs/METHOD.md#threads">sources</a>). The other settings give every checker the same thread count, set with its documented flag. ¹ marks a checker that reported errors where tsgo reported none.</p>
 <section class="project lead" id="vscode">
 <div class="project-head">
 <h2>VS Code</h2>
@@ -316,7 +326,7 @@ footer{color:var(--dim);font-size:14px;padding-top:28px;padding-bottom:56px}
 </div>
 <div class="axis" aria-hidden="true"><div class="ticks"><span style="left:0.00%">0 s</span><span style="left:14.64%">1 s</span><span style="left:29.28%">2 s</span><span style="left:43.92%">3 s</span><span style="left:58.57%">4 s</span><span style="left:73.21%">5 s</span><span style="left:87.85%">6 s</span></div></div>
 </div>
-<p class="diag">Same diagnostics as tsgo, clean and with planted errors: tsc-ts, bun. Different: tsc-rs +10 / −0 (matches its upstream build) · tsrs +10 / −0 (matches its upstream build).</p>
+<p class="diag">tsc-rs and tsrs report 10 errors that tsgo 7.0.2 does not; their upstream TypeScript builds print exactly the same (<a href="#diagnostics">details</a>).</p>
 <p class="small">Checked with <code>-p ./src/tsconfig.json --noEmit --skipLibCheck</code> at <a href="https://github.com/microsoft/vscode/tree/4a82da11e45fee7aa77017b2188b6a394f994074"><code>4a82da11e45f</code></a>, from package.json typecheck-client. Raw: <a href="https://github.com/danfry1/ts-checker-bench/blob/main/results/2026-10-19-apple-m5-darwin/timing.csv">timings</a>, <a href="https://github.com/danfry1/ts-checker-bench/tree/main/results/2026-10-19-apple-m5-darwin/parity/vscode">diagnostics</a>, <a href="https://github.com/danfry1/ts-checker-bench/tree/main/results/2026-10-19-apple-m5-darwin/files/vscode">file lists</a>, <a href="https://github.com/danfry1/ts-checker-bench/blob/main/results/2026-10-19-apple-m5-darwin/work/vscode.txt">work counts</a>.</p>
 </section>
 <section class="project" id="outline">
@@ -461,7 +471,7 @@ footer{color:var(--dim);font-size:14px;padding-top:28px;padding-bottom:56px}
 </div>
 <div class="axis" aria-hidden="true"><div class="ticks"><span style="left:0.00%">0 s</span><span style="left:13.93%">0.5 s</span><span style="left:27.86%">1 s</span><span style="left:41.78%">1.5 s</span><span style="left:55.71%">2 s</span><span style="left:69.64%">2.5 s</span><span style="left:83.57%">3 s</span><span class="end" style="left:97.49%">3.5 s</span></div></div>
 </div>
-<p class="diag">Same diagnostics as tsgo, clean and with planted errors: tsc-ts, bun. Different: tsc-rs +1 / −0 (matches its upstream build) · tsrs +1 / −0 (matches its upstream build).</p>
+<p class="diag">tsc-rs and tsrs report 1 error that tsgo 7.0.2 does not; their upstream TypeScript builds print exactly the same (<a href="#diagnostics">details</a>).</p>
 <p class="small">Checked with <code>-p . --incremental false</code> at <a href="https://github.com/outline/outline/tree/ef7753dc57a6117475ba9703fa683593a68e1ae4"><code>ef7753dc57a6</code></a>, from .github/workflows/ci.yml, job types: yarn tsc --incremental false. Raw: <a href="https://github.com/danfry1/ts-checker-bench/blob/main/results/2026-10-19-apple-m5-darwin/timing.csv">timings</a>, <a href="https://github.com/danfry1/ts-checker-bench/tree/main/results/2026-10-19-apple-m5-darwin/parity/outline">diagnostics</a>, <a href="https://github.com/danfry1/ts-checker-bench/tree/main/results/2026-10-19-apple-m5-darwin/files/outline">file lists</a>, <a href="https://github.com/danfry1/ts-checker-bench/blob/main/results/2026-10-19-apple-m5-darwin/work/outline.txt">work counts</a>.</p>
 </section>
 <section class="project" id="type-fest">
@@ -606,12 +616,12 @@ footer{color:var(--dim);font-size:14px;padding-top:28px;padding-bottom:56px}
 </div>
 <div class="axis" aria-hidden="true"><div class="ticks"><span style="left:0.00%">0 s</span><span style="left:19.01%">1 s</span><span style="left:38.02%">2 s</span><span style="left:57.03%">3 s</span><span style="left:76.05%">4 s</span><span class="end" style="left:95.06%">5 s</span></div></div>
 </div>
-<p class="diag">Same diagnostics as tsgo, clean and with planted errors: tsc-ts, bun. Different: tsc-rs with planted errors +1 / −1 (matches its upstream build) · tsrs with planted errors +1 / −1 (matches its upstream build).</p>
+<p class="diag">tsc-rs and tsrs print one type differently in a message with the planted errors; their upstream TypeScript builds print exactly the same (<a href="#diagnostics">details</a>).</p>
 <p class="small">Checked with <code>-p . --noEmit</code> at <a href="https://github.com/sindresorhus/type-fest/tree/b550b410e13ff6bf9e1467b863b6ebd120e70781"><code>b550b410e13f</code></a>, from package.json test:tsc (tsc on the repo tsconfig, which sets noEmit). Raw: <a href="https://github.com/danfry1/ts-checker-bench/blob/main/results/2026-10-19-apple-m5-darwin/timing.csv">timings</a>, <a href="https://github.com/danfry1/ts-checker-bench/tree/main/results/2026-10-19-apple-m5-darwin/parity/type-fest">diagnostics</a>, <a href="https://github.com/danfry1/ts-checker-bench/tree/main/results/2026-10-19-apple-m5-darwin/files/type-fest">file lists</a>, <a href="https://github.com/danfry1/ts-checker-bench/blob/main/results/2026-10-19-apple-m5-darwin/work/type-fest.txt">work counts</a>.</p>
 </section>
 <section id="overview">
 <h2>All 3 projects against tsgo</h2>
-<p>tsgo's median wall time divided by each checker's: 2.0× means the checker took half as long. Default threading differs: tsgo and tsc-rs default to 4 checkers; tsc-ts, tsrs and bun use one per core, up to 10 on this 10-core machine (<a href="https://github.com/danfry1/ts-checker-bench/blob/main/docs/METHOD.md#threads">sources</a>). The other settings give every checker the same thread count, set with its documented flag.</p>
+<p>tsgo's median wall time divided by each checker's, so 2.0× means the checker took half as long.</p>
 <table class="overview" data-setting="default">
 <thead><tr><th></th><th scope="col">VS Code</th><th scope="col">Outline</th><th scope="col">type-fest</th></tr></thead>
 <tbody><tr><th scope="row"><i class="dot" style="--c:#3178c6"></i>tsc-ts</th><td><span class="cell" style="--c:#3178c6;--v:0.362">2.2×</span></td><td><span class="cell" style="--c:#3178c6;--v:0.622">3.7×</span></td><td><span class="cell" style="--c:#3178c6;--v:0.756">4.5×</span></td></tr>
@@ -640,7 +650,6 @@ footer{color:var(--dim);font-size:14px;padding-top:28px;padding-bottom:56px}
 <tr><th scope="row"><i class="dot" style="--c:#19a979"></i>tsrs</th><td><span class="cell" style="--c:#19a979;--v:0.941">5.6×</span></td><td><span class="cell" style="--c:#19a979;--v:0.843">5.1×</span></td><td><span class="cell" style="--c:#19a979;--v:0.541">3.2×</span></td></tr>
 <tr><th scope="row"><i class="dot" style="--c:#c94fb6"></i>bun</th><td><span class="cell" style="--c:#c94fb6;--v:0.529">3.2×</span></td><td><span class="cell" style="--c:#c94fb6;--v:0.564">3.4×</span></td><td><span class="cell" style="--c:#c94fb6;--v:0.707">4.2×</span></td></tr></tbody>
 </table>
-<p class="small">¹ in the charts: the checker reported errors where tsgo reported none. tsc-rs and tsrs port TypeScript 7.1.0-dev and report errors that tsgo 7.0.2 does not on the clean Outline (1) and VS Code (10); their upstream TypeScript builds report exactly the same (<a href="#diagnostics-compared-with-each-checkers-upstream-build">below</a>).</p>
 </section>
 <section id="diagnostics">
 <h2>Do they report the same errors?</h2>
@@ -679,16 +688,12 @@ footer{color:var(--dim);font-size:14px;padding-top:28px;padding-bottom:56px}
 </section>
 <section id="checkers">
 <h2>Checkers</h2>
-<div class="scroll"><table class="grid wrap">
-<thead><tr><th>Checker</th><th>Package</th><th>Default threading</th><th>Thread flags used</th></tr></thead>
-<tbody><tr><th scope="row">tsgo<span class="tag">reference</span></th><td><a href="https://www.npmjs.com/package/typescript"><code>typescript@7.0.2</code></a><div class="small">Microsoft's native TypeScript 7 compiler (Go)</div></td><td>4 checkers</td><td><code>--singleThreaded</code><br><code>--checkers {n}</code></td></tr>
-<tr><th scope="row">tsc-ts</th><td><a href="https://www.npmjs.com/package/tsc-ts"><code>tsc-ts@0.0.3</code></a><div class="small">A TypeScript port of tsgo 7.0.2, compiled to a native executable with scriptc (Vercel Labs)</div></td><td>one per core (10 here)</td><td><code>--singleThreaded</code><br><code>--checkers {n}</code></td></tr>
-<tr><th scope="row">tsc-rs</th><td><a href="https://www.npmjs.com/package/tsc-rs"><code>tsc-rs@0.7.0</code></a><div class="small">A Rust port of the TypeScript 7 compiler (pingdotgg/ts-rust)</div></td><td>4 checkers</td><td><code>--singleThreaded</code><br><code>--checkers {n}</code></td></tr>
-<tr><th scope="row">tsrs</th><td><a href="https://www.npmjs.com/package/tsrs"><code>tsrs@0.16.0-ts7.1.0-dev.20260929</code></a><div class="small">A Rust port of the TypeScript 7 compiler (oxc-project)</div></td><td>one per core (10 here)</td><td><code>--singleThreaded</code><br><code>--checkers {n}</code></td></tr>
-<tr><th scope="row">bun</th><td><a href="https://www.npmjs.com/package/bun"><code>bun@1.4.3</code></a><div class="small">Bun's built-in type checker (bun check)</div></td><td>one per core (10 here)</td><td><code>--threads=1</code><br><code>--threads={n}</code></td></tr>
-<tr><th scope="row">tsgo-7.1-dev</th><td><a href="https://www.npmjs.com/package/typescript"><code>typescript@7.1.0-dev.20260930.4</code></a><div class="small">Upstream tsgo 7.1-dev, the npm build of the TypeScript commit tsrs 0.16.0 ports (b85298b6a81f; this build's gitHead 9adc871ff47f is one CI-only commit later)</div></td><td>diagnostics only, not timed</td><td>–</td></tr>
-<tr><th scope="row">tsgo-7.1-dev-20261008</th><td><a href="https://www.npmjs.com/package/typescript"><code>typescript@7.1.0-dev.20261008.1</code></a><div class="small">Upstream tsgo 7.1-dev, the npm build of the TypeScript commit tsc-rs 0.7.0 ports (fed0bf24149f, per its UPSTREAM.md at the v0.7.0 tag)</div></td><td>diagnostics only, not timed</td><td>–</td></tr></tbody>
-</table></div>
+<ul class="verdicts checkers"><li><span class="who">tsgo<span class="tag">reference</span></span><div><a href="https://www.npmjs.com/package/typescript"><code>typescript@7.0.2</code></a><p>Microsoft's native TypeScript 7 compiler (Go).</p><p class="small">Default threading: 4 checkers. Thread flags used: <code>--singleThreaded</code> and <code>--checkers N</code>.</p></div></li>
+<li><span class="who">tsc-ts</span><div><a href="https://www.npmjs.com/package/tsc-ts"><code>tsc-ts@0.0.3</code></a><p>A TypeScript port of tsgo 7.0.2, compiled to a native executable with scriptc (Vercel Labs).</p><p class="small">Default threading: one per core (10 here). Thread flags used: <code>--singleThreaded</code> and <code>--checkers N</code>.</p></div></li>
+<li><span class="who">tsc-rs</span><div><a href="https://www.npmjs.com/package/tsc-rs"><code>tsc-rs@0.7.0</code></a><p>A Rust port of the TypeScript 7 compiler (pingdotgg/ts-rust).</p><p class="small">Default threading: 4 checkers. Thread flags used: <code>--singleThreaded</code> and <code>--checkers N</code>.</p></div></li>
+<li><span class="who">tsrs</span><div><a href="https://www.npmjs.com/package/tsrs"><code>tsrs@0.16.0-ts7.1.0-dev.20260929</code></a><p>A Rust port of the TypeScript 7 compiler (oxc-project).</p><p class="small">Default threading: one per core (10 here). Thread flags used: <code>--singleThreaded</code> and <code>--checkers N</code>.</p></div></li>
+<li><span class="who">bun</span><div><a href="https://www.npmjs.com/package/bun"><code>bun@1.4.3</code></a><p>Bun's built-in type checker (bun check).</p><p class="small">Default threading: one per core (10 here). Thread flags used: <code>--threads=1</code> and <code>--threads=N</code>.</p></div></li></ul>
+<p class="small">Diagnostics only, never timed: upstream tsgo <a href="https://www.npmjs.com/package/typescript"><code>typescript@7.1.0-dev.20260930.4</code></a>, the build tsrs ports; <a href="https://www.npmjs.com/package/typescript"><code>typescript@7.1.0-dev.20261008.1</code></a>, the build tsc-rs ports.</p>
 <p class="small">Thread defaults and flags as each checker documents them (<a href="https://github.com/danfry1/ts-checker-bench/blob/main/docs/METHOD.md#threads">sources</a>). Each binary's version output and sha256 are in <a href="https://github.com/danfry1/ts-checker-bench/blob/main/results/2026-10-19-apple-m5-darwin/run.json">run.json</a>.</p>
 </section>
 <section id="method">
@@ -701,6 +706,19 @@ footer{color:var(--dim);font-size:14px;padding-top:28px;padding-bottom:56px}
 <dt>Conditions</dt><dd>All 570 timed runs on AC power, kept awake by caffeinate. Sleep, wake and thermal events: none. Preflight warnings: none.</dd>
 <dt>Harness</dt><dd><a href="https://github.com/danfry1/ts-checker-bench/tree/bde799c06fc93b5cc19af2cb72306efeb6f1a455"><code>bde799c06fc9</code></a> <span class="small">(added 2026-10-19: this run did not record it; the last harness commit before the run started and the parent of its results commit 11c0091, which changes no harness file)</span></dd></dl>
 <p>Caveats, and what the numbers do not show, in <a href="https://github.com/danfry1/ts-checker-bench/blob/main/docs/METHOD.md">docs/METHOD.md</a>. Every file behind this page is in <a href="https://github.com/danfry1/ts-checker-bench/tree/main/results/2026-10-19-apple-m5-darwin">results/2026-10-19-apple-m5-darwin/</a>, with its <a href="https://github.com/danfry1/ts-checker-bench/blob/main/results/2026-10-19-apple-m5-darwin/report.md">full report</a>.</p>
+</section>
+<section id="reproduce">
+<h2>Run it yourself</h2>
+<p>On macOS, Linux or Windows, with Node 22.18 or later and git, on a quiet machine on AC power. A full run takes about an hour on a 10-core Mac. <a href="https://github.com/danfry1/ts-checker-bench/blob/main/AGENTS.md">AGENTS.md</a> has every prerequisite and step.</p>
+<pre><code>git clone https://github.com/danfry1/ts-checker-bench
+cd ts-checker-bench
+(cd bench &amp;&amp; npm ci &amp;&amp; npm run check)
+# every checker and project, about 10 GB
+node bench setup
+# plugged in? anything busy?
+node bench preflight
+# writes results/&lt;date&gt;-&lt;cpu&gt;-&lt;os&gt;/
+node bench run</code></pre>
 </section>
 </main>
 <footer>
@@ -769,8 +787,13 @@ const seen = new IntersectionObserver(entries => {
 	for (const e of entries) if (e.isIntersecting && !e.target.hidden && e.target.dataset.played !== setting) play(e.target);
 }, { threshold: 0.4 });
 document.querySelectorAll(".race").forEach(r => seen.observe(r));
-function choose(key) {
+function choose(key, fromUrl) {
 	setting = key;
+	if (!fromUrl) {
+		const u = new URL(location.href);
+		if (key === "default") u.searchParams.delete("threads"); else u.searchParams.set("threads", key.slice(1));
+		history.replaceState(null, "", u);
+	}
 	document.querySelectorAll("[data-setting]").forEach(el => { el.hidden = el.dataset.setting !== key; });
 	document.querySelectorAll(".seg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.key === key)));
 	document.querySelectorAll(".race:not([hidden])").forEach(r => {
@@ -780,6 +803,9 @@ function choose(key) {
 	});
 }
 document.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => choose(b.dataset.key)));
+// ?threads=1 opens the page at that setting, so a view can be linked.
+const fromUrl = new URLSearchParams(location.search).get("threads");
+if (fromUrl && document.querySelector('.seg button[data-key="t' + fromUrl + '"]')) choose("t" + fromUrl, true);
 document.querySelectorAll(".replay").forEach(b => b.addEventListener("click", () => {
 	const r = b.closest(".project").querySelector(".race:not([hidden])");
 	if (r) play(r);
