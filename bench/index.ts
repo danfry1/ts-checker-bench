@@ -9,15 +9,17 @@
 //                            --dry-run             print the plan and exit
 //                            --smoke               type-fest only, 1 iteration, into results/.smoke/;
 //                                                  checks the harness end to end in about 8 minutes
-//   report [<run>] [--check]   write results/<run>/report.md and the README results block
+//   report [<run>] [--check]   write results/<run>/report.md, the README results block and site/
+//   site-image             render site/og.html to site/og.png, the link preview (needs Chrome)
 //
 // See docs/METHOD.md for what a run measures and why.
 import fs from "node:fs";
 import { projects } from "./config.ts";
 import { preflight, printPreflight } from "./preflight.ts";
-import { report } from "./report.ts";
+import { SITE_DIR, report } from "./report.ts";
 import { run } from "./run.ts";
 import { setup } from "./setup.ts";
+import { renderSiteImage } from "./site.ts";
 
 const FLAGS = new Set(["--dry-run", "--check", "--smoke"]);
 
@@ -52,8 +54,11 @@ switch (positional[0]) {
 	case "report":
 		report(positional[1], { check: options.check === true });
 		break;
+	case "site-image":
+		renderSiteImage(SITE_DIR);
+		break;
 	default: {
-		const usage = fs.readFileSync(import.meta.filename, "utf8").split("\n").slice(0, 14);
+		const usage = fs.readFileSync(import.meta.filename, "utf8").split("\n").slice(0, 15);
 		console.log(usage.map(l => l.replace(/^\/\/ ?/, "")).join("\n"));
 		process.exitCode = positional[0] ? 1 : 0;
 	}

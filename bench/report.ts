@@ -6,11 +6,11 @@ import path from "node:path";
 import { RESULTS_DIR, ROOT, checkers as configured, projects as configuredProjects } from "./config.ts";
 import { type Summary, countFiles, lineDiff, maskElapsed, normalizeDiagnostics, normalizeFileList, parseBunTiming, parseWorkStats, ratio, summarize } from "./analysis.ts";
 import { COLOURS, raceSvg } from "./race.ts";
-import { siteHtml } from "./site.ts";
+import { ogHtml, ogImageCurrent, siteHtml } from "./site.ts";
 import { type Gate, type Run, gateOutcome, listRuns, loadRun } from "./results.ts";
 
 const README = path.join(ROOT, "README.md");
-const SITE_DIR = path.join(ROOT, "site");
+export const SITE_DIR = path.join(ROOT, "site");
 const START = "<!-- results:start -->";
 const END = "<!-- results:end -->";
 export const DIFF_LEGEND = "+n / −m: after normalising, n diagnostics only in that checker and m only in the reference. Every difference is listed verbatim in the run's report.";
@@ -547,4 +547,10 @@ export function report(name?: string, { check = false }: { check?: boolean } = {
 	writeOrCheck(README, before + readmeBlock(latest, [...byPlatform.values()], earlier) + rest.split(END)[1], check);
 	if (!check) fs.mkdirSync(SITE_DIR, { recursive: true });
 	writeOrCheck(path.join(SITE_DIR, "index.html"), siteHtml(latest), check);
+	const og = ogHtml(latest);
+	writeOrCheck(path.join(SITE_DIR, "og.html"), og, check);
+	if (!ogImageCurrent(SITE_DIR, og)) {
+		console.error("out of date: site/og.png (run node bench site-image)");
+		if (check) process.exitCode = 1;
+	}
 }
