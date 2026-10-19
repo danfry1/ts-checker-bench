@@ -88,6 +88,8 @@ Checkers that port a different TypeScript build, compared byte for byte with tha
 | tsrs | tsgo-7.1-dev (`typescript@7.1.0-dev.20260930.4`) | byte-identical | byte-identical | byte-identical | byte-identical | byte-identical | byte-identical |
 
 Full report, with every thread setting, the cold check, file lists and every diagnostic difference verbatim: [`results/2026-10-19-apple-m5-darwin/report.md`](results/2026-10-19-apple-m5-darwin/report.md).
+
+Earlier runs on darwin-arm64, to compare: [`2026-10-18-apple-m5-darwin`](results/2026-10-18-apple-m5-darwin/report.md). Seconds can move between sessions on the same machine, so compare ratios rather than seconds.
 <!-- results:end -->
 
 How to read these: every checker runs with its shipped defaults, plus only the project's own typecheck arguments. No tuning flags are used: not tsrs's `--checkerAssignment go`, and not tsc-rs's `--fast`. The first table uses each checker's default threading, and those defaults differ; the single-threaded table sets one thread with each checker's documented flag ([details](docs/METHOD.md#threads)). tsc-rs and tsrs port TypeScript 7.1-dev, not 7.0.2; the "explain" checker, upstream tsgo 7.1-dev, shows which of their diagnostic differences come from TypeScript 7.1 itself. Method, caveats and what the numbers do not show: [`docs/METHOD.md`](docs/METHOD.md).

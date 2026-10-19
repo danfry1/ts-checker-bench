@@ -426,7 +426,7 @@ const raceImages = (run: Run, suffix: string, dir: string) =>
 
 // ---------------------------------------------------------------------------- README block
 
-function readmeBlock(run: Run, others: Run[]): string {
+function readmeBlock(run: Run, others: Run[], earlier: Run[]): string {
 	const ref = referenceName(run);
 	const checkers = timedNames(run);
 	const threaded = checkers.filter(hasThreadFlag);
@@ -468,6 +468,7 @@ function readmeBlock(run: Run, others: Run[]): string {
 		"",
 		...(ownBuildTable(run).length ? ["### Diagnostics compared with each checker's upstream build", "", "Checkers that port a different TypeScript build, compared byte for byte with that build's own output.", "", ...ownBuildTable(run), ""] : []),
 		`Full report, with every thread setting, the cold check, file lists and every diagnostic difference verbatim: [\`results/${run.name}/report.md\`](results/${run.name}/report.md).`,
+		...(earlier.length ? ["", `Earlier runs on ${m.machine.platform}, to compare: ` + earlier.map(e => `[\`${e.name}\`](results/${e.name}/report.md)`).join(", ") + ". Seconds can move between sessions on the same machine, so compare ratios rather than seconds."] : []),
 		...(others.length ? ["", "Latest run on other platforms: " + others.map(o => `[${o.meta.machine.platform}, ${o.meta.machine.cpu}](results/${o.name}/report.md)`).join(", ") + "."] : []),
 		END,
 	].join("\n");
@@ -513,8 +514,12 @@ export function report(name?: string, { check = false }: { check?: boolean } = {
 	const latest = loadRun(name ?? all[all.length - 1]);
 	// The latest run on each other platform, linked below the tables.
 	const byPlatform = new Map<string, Run>();
-	for (const r of all.map(loadRun)) if (r.meta.machine.platform !== latest.meta.machine.platform) byPlatform.set(r.meta.machine.platform, r);
+	const earlier: Run[] = [];
+	for (const r of all.map(loadRun)) {
+		if (r.meta.machine.platform !== latest.meta.machine.platform) byPlatform.set(r.meta.machine.platform, r);
+		else if (r.name !== latest.name) earlier.unshift(r);
+	}
 	const [before, rest] = fs.readFileSync(README, "utf8").split(START);
 	if (rest === undefined) throw new Error(`README.md has no ${START} marker`);
-	writeOrCheck(README, before + readmeBlock(latest, [...byPlatform.values()]) + rest.split(END)[1], check);
+	writeOrCheck(README, before + readmeBlock(latest, [...byPlatform.values()], earlier) + rest.split(END)[1], check);
 }
