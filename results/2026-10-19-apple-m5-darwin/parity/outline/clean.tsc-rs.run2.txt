@@ -1,0 +1,1 @@
+server/routes/api/batch/schema.ts(13,17): error TS5115: Instantiations of the following types appear infinitely circular: 'IsOptionalIn', '$ZodTypeInternals', '$InferZodRecordInput'.

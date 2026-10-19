@@ -1,0 +1,2 @@
+✓ No type errors in 10,427 files [2.16s]
+  11500 files loaded in 478.6ms, 10427 checked in 1684.0ms, 1228 KB of stack at the most

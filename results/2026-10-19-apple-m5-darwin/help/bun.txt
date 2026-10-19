@@ -1,0 +1,36 @@
+Usage: bun check [flags] [...files or directories]
+  Type check a TypeScript project.
+
+  Uses the nearest tsconfig.json and reports the same errors as tsc, using all CPU cores.
+  Pass files or directories to check only those and their imports.
+  Project references are followed, like tsc -b, and nothing has to be built first.
+
+Flags:
+  -p, --project=<val>    Path to a tsconfig.json or its directory
+      --pretty=<val>     Show source code around each error (default in a terminal)
+  -b, --build            Check the projects in references too, like tsc -b
+      --no-pretty        One line per error, like tsc --pretty false (default when piped)
+      --all              Show every error (above 50, identical errors are grouped)
+      --threads=<val>    Number of threads (default: one per CPU core)
+      --timing           Print load and check times
+      --cwd=<val>        Set the working directory
+  -h, --help             Print this help menu
+      --strict, --target=<val>, ...  Any compiler option, as for tsc. Overrides tsconfig.json
+
+Examples:
+  Check the current project
+  bun check
+
+  Check one file and everything it imports
+  bun check src/index.ts
+
+  Check another project
+  bun check -p packages/server
+
+  Try a stricter option without editing tsconfig.json
+  bun check --noUncheckedIndexedAccess
+
+  Check a file, then run it
+  bun --check src/index.ts
+
+Full documentation is available at https://bun.com/docs/runtime/check
