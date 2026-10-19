@@ -5,7 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { RESULTS_DIR, ROOT, checkers as configured } from "./config.ts";
 import { type Summary, countFiles, lineDiff, maskElapsed, normalizeDiagnostics, normalizeFileList, parseBunTiming, ratio, summarize } from "./analysis.ts";
-import { type Run, listRuns, loadRun } from "./results.ts";
+import { type Gate, type Run, gateOutcome, listRuns, loadRun } from "./results.ts";
 
 const README = path.join(ROOT, "README.md");
 const START = "<!-- results:start -->";
@@ -19,7 +19,19 @@ export function stat(run: Run, project: string, phase: string, checker: string, 
 }
 
 const range = (s: Summary) => `${s.median.toFixed(2)} (${s.min.toFixed(2)}–${s.max.toFixed(2)})`;
-const benchmarked = (run: Run) => run.meta.projects.filter(p => p.gate.exit === 0).map(p => p.name);
+const benchmarked = (run: Run) => run.meta.projects.filter(p => gateOutcome(p.gate) === "passed").map(p => p.name);
+
+function gateCell(run: Run, project: string, g: Gate): string {
+	const first = `\`${(run.read("gate", `${project}.txt`) ?? "").split("\n")[0].replaceAll("|", "\\|")}\``;
+	switch (gateOutcome(g)) {
+		case "passed":
+			return "0 errors";
+		case "rejected":
+			return `**rejected**: ${first}`;
+		case "failed":
+			return `**not measured**: the reference did not finish (${g.signal ? `killed by ${g.signal}` : `exit ${g.exit}, no diagnostics`})`;
+	}
+}
 const timedNames = (run: Run) => run.meta.checkers.filter(c => c.role !== "explain" && c.available !== false).map(c => c.name);
 const unavailableNote = (run: Run) => {
 	const missing = run.meta.checkers.filter(c => c.available === false).map(c => c.name);
@@ -188,8 +200,7 @@ function reportMarkdown(run: Run): string {
 
 	out.push("## Projects", "", "| Project | Commit | Command | Gate |", "|---|---|---|---|");
 	for (const p of m.projects) {
-		const first = p.gate.exit === 0 ? "" : `: \`${(run.read("gate", `${p.name}.txt`) ?? "").split("\n")[0].replaceAll("|", "\\|")}\``;
-		out.push(`| [${p.name}](${p.repo}) | \`${p.sha.slice(0, 12)}\` | \`${p.args.join(" ")}\` (${p.argsSource}) | ${p.gate.exit === 0 ? "0 errors" : `**rejected**${first}`} |`);
+		out.push(`| [${p.name}](${p.repo}) | \`${p.sha.slice(0, 12)}\` | \`${p.args.join(" ")}\` (${p.argsSource}) | ${gateCell(run, p.name, p.gate)} |`);
 	}
 	out.push("");
 

@@ -5,6 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { PLATFORM, availableHere, binaryPath, checkers, project, projectDir } from "./config.ts";
 import { type Power, awakeWrapper, busyProcesses, cpuSpeedLimit, power, timingPrerequisites } from "./platform.ts";
+import { isInstalled } from "./setup.ts";
 import { git } from "./system.ts";
 
 export interface Preflight {
@@ -28,6 +29,7 @@ export function preflight(projectNames: string[]): Preflight {
 	for (const name of projectNames) {
 		const dir = projectDir(project(name));
 		if (!fs.existsSync(dir)) blocking.push(`${name} is not set up: run node bench setup`);
+		else if (!isInstalled(project(name))) blocking.push(`${name} has no record of a finished install (it failed, or predates the record): remove ${dir} and run node bench setup`);
 		else if (git(dir, "status", "--porcelain")) blocking.push(`${name} has local changes in ${dir}`);
 	}
 	// Module resolution searches node_modules in every parent directory, so packages above the

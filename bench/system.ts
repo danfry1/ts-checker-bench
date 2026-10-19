@@ -30,7 +30,8 @@ export const loadAverage = (): string => (process.platform === "win32" ? "n/a" :
  * Runs a program and returns its output, with stdout and stderr interleaved as with 2>&1:
  * both are written to the same file, which is read back afterwards.
  */
-export function capture(argv: string[], cwd: string): { output: string; exit: number } {
+/** exit is -1 when the process was killed; signal then names the signal (POSIX only). */
+export function capture(argv: string[], cwd: string): { output: string; exit: number; signal?: string } {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "bench-out-"));
 	const file = path.join(dir, "output.txt");
 	const fd = fs.openSync(file, "w");
@@ -39,7 +40,7 @@ export function capture(argv: string[], cwd: string): { output: string; exit: nu
 		const r = spawnSync(program, args, { cwd, stdio: ["ignore", fd, fd] });
 		if (r.error) throw r.error;
 		fs.closeSync(fd);
-		return { output: fs.readFileSync(file, "utf8"), exit: r.status ?? -1 };
+		return { output: fs.readFileSync(file, "utf8"), exit: r.status ?? -1, ...(r.signal ? { signal: r.signal } : {}) };
 	} finally {
 		try {
 			fs.closeSync(fd);

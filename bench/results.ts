@@ -6,6 +6,23 @@ import { RESULTS_DIR } from "./config.ts";
 import type { Power } from "./platform.ts";
 import type { Preflight } from "./preflight.ts";
 
+/** The reference checker's result on a project. signal is set when it was killed. */
+export interface Gate {
+	exit: number;
+	errors: number;
+	signal?: string;
+}
+
+/**
+ * passed: 0 errors, so the project is benchmarked. rejected: the reference reported errors.
+ * failed: it exited non-zero without reporting any (killed, out of memory, crashed), which says
+ * nothing about the project.
+ */
+export function gateOutcome(g: Gate): "passed" | "rejected" | "failed" {
+	if (g.exit === 0) return "passed";
+	return g.errors > 0 && !g.signal ? "rejected" : "failed";
+}
+
 export interface RunMeta {
 	name: string;
 	/** Free-text caveat shown at the top of the run's report and the README block. */
@@ -34,7 +51,7 @@ export interface RunMeta {
 	keptAwakeBy: string | null;
 	/** Checkers that publish no build for this platform have available: false and no version or hash. */
 	checkers: { name: string; package: string; role: string; available: boolean; versionOutput?: string; binarySha256?: string }[];
-	projects: { name: string; repo: string; sha: string; args: string[]; argsSource: string; gate: { exit: number; errors: number } }[];
+	projects: { name: string; repo: string; sha: string; args: string[]; argsSource: string; gate: Gate }[];
 	/** The environment variables the cold check points at fresh empty directories. */
 	coldCheckVariables: string[];
 	/** Files written to those fresh directories. */

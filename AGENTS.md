@@ -24,7 +24,7 @@ git clone <this repository> && cd ts-checker-bench
 node bench setup            # every checker into tools/, every project into projects/
 ```
 
-`node bench setup` installs each checker from its committed lockfile and clones each project at its pinned commit. It fails loudly if a native binary is missing.
+`node bench setup` installs each checker from its committed lockfile and clones each project at its pinned commit. It fails loudly if a native binary is missing. If a project's install fails, remove its folder under `projects/` before running setup again; setup and preflight refuse a checkout whose install did not finish.
 
 ## 3. Prepare the machine
 

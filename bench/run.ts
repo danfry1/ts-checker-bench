@@ -6,7 +6,7 @@ import path from "node:path";
 import { type Checker, type Project, FIXTURES_DIR, PLATFORM, RESULTS_DIR, ROOT, availableHere, binaryPath, checkers, command, explainers, invocation, project, projectDir, projects, reference, threadFlags, timed } from "./config.ts";
 import { awakeWrapper, cpuModel, freshDirectoryVariables, holdAwake, measure, osEvents, osName, power } from "./platform.ts";
 import { type Preflight, preflight, printPreflight } from "./preflight.ts";
-import { type Phase, type RunMeta, CSV_COLUMNS, csvLine } from "./results.ts";
+import { type Gate, type Phase, type RunMeta, CSV_COLUMNS, csvLine, gateOutcome } from "./results.ts";
 import { report, reportRun } from "./report.ts";
 import { capture, git, loadAverage, runChecker, runProgram, sha256 } from "./system.ts";
 
@@ -159,11 +159,13 @@ function recordHelp(rec: Recorder): void {
 function gate(rec: Recorder, p: Project): boolean {
 	const r = runChecker(reference, p);
 	rec.write(`gate/${p.name}.txt`, r.output, p);
-	const errors = (r.output.match(/error TS\d+/g) ?? []).length;
-	rec.meta.projects.push({ name: p.name, repo: p.repo, sha: git(projectDir(p), "rev-parse", "HEAD"), args: p.args, argsSource: p.argsSource, gate: { exit: r.exit, errors } });
+	const g: Gate = { exit: r.exit, errors: (r.output.match(/error TS\d+/g) ?? []).length, ...(r.signal ? { signal: r.signal } : {}) };
+	rec.meta.projects.push({ name: p.name, repo: p.repo, sha: git(projectDir(p), "rev-parse", "HEAD"), args: p.args, argsSource: p.argsSource, gate: g });
 	rec.save();
-	console.log(`${p.name}: gate exit ${r.exit}, ${errors} errors`);
-	return r.exit === 0;
+	const outcome = gateOutcome(g);
+	console.log(`${p.name}: gate exit ${r.exit}${r.signal ? ` (killed by ${r.signal})` : ""}, ${g.errors} errors: ${outcome}`);
+	if (outcome === "failed") console.log(`${p.name}: ${reference.name} did not finish, so the project is not measured; see gate/${p.name}.txt`);
+	return outcome === "passed";
 }
 
 function fileLists(rec: Recorder, p: Project): void {

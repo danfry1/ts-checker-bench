@@ -9,7 +9,7 @@ What a run measures, how, and what it does not show. The numbers are in each run
 1. **Preflight.** It refuses to start on battery, with a checker or project missing, or with a project checkout that has local changes. It warns about busy processes, a high load average or a CPU speed limit, and records the warnings in `run.json`.
 2. **Records the setup.** It writes the machine, macOS and Node versions, each checker's package, `--version` output and native binary sha256, and tool-related environment variables to `run.json`. Each checker's `--help` output goes to `help/`.
 3. **For each project:**
-   1. **Gate.** The reference checker (tsgo 7.0.2) runs the project's own typecheck command. A project with any error is recorded as rejected and not benchmarked (`gate/`).
+   1. **Gate.** The reference checker (tsgo 7.0.2) runs the project's own typecheck command. A project with any error is recorded as rejected and not benchmarked. If the reference exits non-zero without reporting an error (killed, out of memory, crashed), the project is recorded as not measured instead, since that says nothing about the project (`gate/`).
    2. **File lists.** Each timed checker reports the files in its program (`files/`).
    3. **Diagnostics.** Every checker, plus the explain-only checker, runs twice on the clean checkout and twice with `fixtures/patches/<project>.patch` applied. The checkout is restored with `git checkout` afterwards (`parity/`).
    4. **Cold check.** Each timed checker runs 3 times in the normal environment, alternating with 3 runs under fresh, empty `HOME`, `TMPDIR` and `XDG_CACHE_HOME`. Any file written to those directories is recorded.

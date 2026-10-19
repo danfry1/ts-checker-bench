@@ -5,6 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { RESULTS_DIR, ROOT } from "../config.ts";
 import { normalizeFileList } from "../analysis.ts";
+import { gateOutcome } from "../results.ts";
 import { scrub } from "../run.ts";
 
 test("scrub makes checkout paths project-relative, repository paths repo-relative, and home ~", () => {
@@ -41,4 +42,12 @@ test("no results file contains a machine-specific absolute path", () => {
 		const m = machinePath.exec(text);
 		assert.equal(m, null, `${path.relative(ROOT, file)} contains "${m ? text.slice(Math.max(0, m.index - 20), m.index + 40) : ""}"`);
 	}
+});
+
+test("a gate is rejected only when the reference reported errors and finished", () => {
+	assert.equal(gateOutcome({ exit: 0, errors: 0 }), "passed");
+	assert.equal(gateOutcome({ exit: 1, errors: 1 }), "rejected");
+	assert.equal(gateOutcome({ exit: -1, errors: 0, signal: "SIGKILL" }), "failed");
+	assert.equal(gateOutcome({ exit: -1, errors: 3, signal: "SIGKILL" }), "failed");
+	assert.equal(gateOutcome({ exit: 3221225495, errors: 0 }), "failed");
 });

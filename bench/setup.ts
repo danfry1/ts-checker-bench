@@ -38,10 +38,17 @@ function installStep(step: InstallStep, dir: string, p: Project): void {
 	}
 }
 
+/** Written inside the checkout's .git/ once every install step has succeeded, so git status never sees it. */
+const installedMarker = (p: Project) => path.join(projectDir(p), ".git", "ts-checker-bench-installed");
+
+/** Whether the checkout exists and its install finished. A failed install leaves a checkout without the marker. */
+export const isInstalled = (p: Project) => fs.existsSync(installedMarker(p));
+
 export function setupProject(p: Project): void {
 	const dir = projectDir(p);
 	console.log(`== ${p.name} @ ${p.sha.slice(0, 12)}`);
 	if (fs.existsSync(dir)) {
+		if (!isInstalled(p)) throw new Error(`${dir} has no record of a finished install (it failed, or predates the record): remove it and run setup again`);
 		if (git(dir, "rev-parse", "HEAD") !== p.sha) throw new Error(`${dir} is not at ${p.sha}; remove it to set it up again`);
 		console.log("already set up");
 		return;
@@ -52,6 +59,7 @@ export function setupProject(p: Project): void {
 	}
 	for (const step of p.install) installStep(step, dir, p);
 	if (git(dir, "status", "--porcelain")) throw new Error(`${p.name}: install left local changes in ${dir}`);
+	fs.writeFileSync(installedMarker(p), `${p.sha}\n`);
 }
 
 export function setup(only?: string[]): void {

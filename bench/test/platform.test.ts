@@ -56,3 +56,8 @@ test("preflight finds node_modules above a checkout, and none above the real pro
 	fs.rmSync(root, { recursive: true, force: true });
 	assert.deepEqual(leakingNodeModules(projects.map(projectDir)), []);
 });
+
+test("capture records the signal of a killed process", { skip: process.platform === "win32" && "Windows has no signals" }, () => {
+	const r = capture([process.execPath, "-e", "process.kill(process.pid, 'SIGKILL')"], os.tmpdir());
+	assert.deepEqual([r.exit, r.signal], [-1, "SIGKILL"]);
+});
