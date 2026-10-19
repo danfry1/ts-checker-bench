@@ -6,7 +6,6 @@ import path from "node:path";
 import { ROOT, checkers as configured, projects as configuredProjects } from "./config.ts";
 import { ratio } from "./analysis.ts";
 import {
-	DIFF_LEGEND,
 	benchmarked,
 	checkerColours,
 	defaultThreadsLine,
@@ -21,7 +20,6 @@ import {
 	sameOutput,
 	stat,
 	timedNames,
-	verdict,
 	workStats,
 } from "./report.ts";
 import { type Run, gateOutcome } from "./results.ts";
@@ -104,7 +102,7 @@ function race(run: Run, project: string, s: Setting, hidden: boolean): string {
 		})
 		.join("\n");
 	return `<div class="race" data-setting="${s.key}" data-slowest="${slowest.toFixed(3)}" data-speed="${speed.toFixed(4)}"${hidden ? " hidden" : ""}>
-<div class="race-head"><span class="clock" aria-hidden="true"><span class="t" style="min-width:${slowest.toFixed(2).length}ch">${slowest.toFixed(2)}</span><small> s</small><span class="speed">${speed > 1 ? `played at ${speed.toFixed(1)}× speed` : "real time"}</span></span><span class="cols"><span>wall time</span><span>vs ${esc(ref)}</span><span>CPU time</span><span>peak memory</span></span></div>
+<div class="race-head"><span class="clock" aria-hidden="true"><span class="t">${slowest.toFixed(2)}</span><small> s</small><span class="speed">${speed > 1 ? `played at ${speed.toFixed(1)}× speed` : "real time"}</span></span><span class="cols"><span>wall time</span><span>vs ${esc(ref)}</span><span>CPU time</span><span>peak memory</span></span></div>
 ${body}
 <div class="axis" aria-hidden="true"><div class="ticks">${ticks.map(t => `<span${t / slowest > 0.94 ? ' class="end"' : ""} style="left:${((t / slowest) * 100).toFixed(2)}%">${t} s</span>`).join("")}</div></div>
 </div>`;
@@ -160,52 +158,67 @@ ${ss.map((s, i) => race(run, p, s, i !== 0)).join("\n")}
 
 function diagnosticsSection(run: Run): string {
 	const ref = referenceName(run);
-	const others = run.meta.checkers.filter(c => c.available !== false && c.name !== ref).map(c => c.name);
-	const cls = (v: string) => (v === "byte-identical" ? "ok" : v.startsWith("+") ? "diff" : "");
-	const rows = bySize(run).flatMap(p => {
-		const results = parity(run, p);
-		return ["clean", "broken"].flatMap(state => {
-			const refRow = results.find(r => r.state === state && r.checker === ref);
-			if (!refRow) return [];
-			const cells = others.map(n => {
-				const v = verdict(results.find(r => r.state === state && r.checker === n));
-				return `<td class="${cls(v)}">${esc(v)}</td>`;
+	const projects = bySize(run);
+	const states = ["clean", "broken"];
+	const results = new Map(projects.map(p => [p, parity(run, p)]));
+	const find = (p: string, s: string, c: string) => results.get(p)!.find(r => r.state === s && r.checker === c);
+	// One tile per project and state: ✓ byte-identical, ≈ the same after normalising, or the counts that differ.
+	const tile = (p: string, s: string, c: string) => {
+		const r = find(p, s, c);
+		if (!r) return `<td class="tile">–</td>`;
+		if (r.raw) return `<td class="tile ok" title="byte-identical">✓</td>`;
+		if (r.normalized) return `<td class="tile near" title="same after normalising">≈</td>`;
+		return `<td class="tile diff" title="${r.extra.length} only in ${esc(c)}, ${r.missing.length} only in ${esc(ref)}">+${r.extra.length}${r.missing.length ? ` −${r.missing.length}` : ""}</td>`;
+	};
+	const upstreamTile = (p: string, s: string, c: string, b: string) => {
+		const same = sameOutput(run, p, s, c, b);
+		return same === undefined ? `<td class="tile">–</td>` : same ? `<td class="tile ok" title="byte-identical to ${esc(b)}">✓</td>` : `<td class="tile diff" title="differs from ${esc(b)}">≠</td>`;
+	};
+	const cols = projects.length * states.length;
+	// Fixed columns, so the header and every checker's table line up.
+	const colgroup = `<colgroup><col class="lc">${"<col class=\"tc\">".repeat(cols)}</colgroup>`;
+	const errorsLabel = (n?: number) => (n === undefined ? "–" : `${n} ${n === 1 ? "error" : "errors"}`);
+	const rows = timedNames(run)
+		.filter(c => c !== ref)
+		.map(c => {
+			const all = projects.flatMap(p => states.flatMap(s => find(p, s, c) ?? []));
+			const build = ownBuild(run, c);
+			const pkg = build ? (run.meta.checkers.find(x => x.name === build)?.package ?? build) : "";
+			const upstreamSame = build !== undefined && projects.every(p => states.every(s => sameOutput(run, p, s, c, build) === true));
+			const differs = projects.flatMap(p => {
+				const rs = states.flatMap(s => find(p, s, c) ?? []).filter(r => !r.normalized);
+				if (!rs.length) return [];
+				const extra = Math.max(...rs.map(r => r.extra.length));
+				const missing = Math.max(...rs.map(r => r.missing.length));
+				return [`${projectTitle(p)} (${extra ? `${extra} extra` : ""}${extra && missing ? ", " : ""}${missing ? `${missing} missing` : ""})`];
 			});
-			return [`<tr><th scope="row">${esc(projectTitle(p))}, ${state === "broken" ? "planted errors" : "clean"}</th><td class="num">${refRow.errors}</td>${cells.join("")}</tr>`];
-		});
-	});
-	const ported = timedNames(run).flatMap(c => {
-		const b = ownBuild(run, c);
-		return b ? [[c, b]] : [];
-	});
-	const cols = bySize(run).flatMap(p => ["clean", "broken"].map(s => [p, s]));
-	const upstream = ported.length
-		? `<h3 id="diagnostics-compared-with-each-checkers-upstream-build">Compared with the TypeScript build each port is based on</h3>
-<p>tsc-rs and tsrs port TypeScript 7.1-dev, not 7.0.2. Each is compared byte for byte with upstream tsgo built from the commit it ports.</p>
-<div class="scroll"><table class="grid">
-<thead><tr><th>Checker</th><th>Upstream build</th>${cols.map(([p, s]) => `<th>${esc(projectTitle(p))}, ${s === "broken" ? "planted" : "clean"}</th>`).join("")}</tr></thead>
-<tbody>${ported
-				.map(([c, b]) => {
-					const pkg = run.meta.checkers.find(x => x.name === b)?.package ?? b;
-					const cells = cols.map(([p, s]) => {
-						const same = sameOutput(run, p, s, c, b);
-						return same === undefined ? "<td>–</td>" : `<td class="${same ? "ok" : "diff"}">${same ? "byte-identical" : "differs"}</td>`;
-					});
-					return `<tr><th scope="row">${esc(c)}</th><td><code>${esc(pkg)}</code></td>${cells.join("")}</tr>`;
-				})
-				.join("\n")}</tbody>
-</table></div>`
-		: "";
+			const summary = all.every(r => r.raw)
+				? `Byte-identical to ${esc(ref)} on every project, clean and with planted errors.`
+				: all.every(r => r.normalized)
+					? `The same errors as ${esc(ref)} at the same places with the same top-level messages; its output differs only once normalised.`
+					: `Differs from ${esc(ref)} on ${esc(differs.join(", "))}.${upstreamSame ? ` Byte-identical to <code>${esc(pkg)}</code>, the TypeScript build it ports, everywhere: the differences come from that build, not the port.` : ""}`;
+			const upstream = build ? `<tr><th scope="row" class="sublabel"><span class="long">its upstream build</span><span class="short">upstream</span></th>${projects.flatMap(p => states.map(s => upstreamTile(p, s, c, build))).join("")}</tr>` : "";
+			return `<div class="dcheck">
+<table class="dtable">${colgroup}<tbody>
+<tr><th scope="row">${esc(c)}</th>${projects.flatMap(p => states.map(s => tile(p, s, c))).join("")}</tr>
+${upstream}
+</tbody></table>
+<p class="summary">${summary}</p>
+</div>`;
+		})
+		.join("\n");
 	return `<section id="diagnostics">
 <h2>Do they report the same errors?</h2>
-<p>Every checker ran each project twice clean and twice with <a href="${tree("fixtures/patches")}">a patch of planted type errors</a>. Its output is compared with ${esc(ref)}'s byte for byte, and after normalising to one <code>path:line:col code message</code> line per error.</p>
-${notDropIn(run).map(l => `<p>${inline(l)}</p>`).join("\n")}
-<div class="scroll"><table class="grid">
-<thead><tr><th>Project</th><th>${esc(ref)} errors</th>${others.map(n => `<th>${esc(n)}</th>`).join("")}</tr></thead>
-<tbody>${rows.join("\n")}</tbody>
-</table></div>
-<p class="small">${esc(DIFF_LEGEND)} <a href="${blob(`results/${run.name}/report.md`)}#differences-verbatim-normalised-form">Every difference, verbatim</a>.</p>
-${upstream}
+<p>Every checker ran each project twice clean and twice with <a href="${tree("fixtures/patches")}">a patch of planted type errors</a>. Its output is compared with ${esc(ref)}'s byte for byte, and after normalising to one <code>path:line:col code message</code> line per error.${timedNames(run).some(c => ownBuild(run, c)) ? " Checkers that port a different TypeScript build are also compared with that build's own output, in a second row." : ""}</p>
+<div class="dgrid" style="--n:${cols}" id="diagnostics-compared-with-each-checkers-upstream-build">
+<table class="dtable head">${colgroup}<thead>
+<tr><th></th>${projects.map(p => `<th colspan="${states.length}" scope="colgroup">${esc(projectTitle(p))}</th>`).join("")}</tr>
+<tr class="states"><th></th>${projects.flatMap(p => states.map(s => `<th scope="col">${s === "clean" ? "clean" : "planted"}<span>${errorsLabel(find(p, s, ref)?.errors)}</span></th>`)).join("")}</tr>
+</thead></table>
+${rows}
+</div>
+<p class="legend small"><span><b class="ok">✓</b> byte-identical</span><span><b>≈</b> same errors, places and top-level messages after normalising</span><span><b class="diff">+n −m</b> errors only in the checker, only in ${esc(ref)}</span><span>The counts under each column are ${esc(ref)}'s errors.</span></p>
+<p class="small"><a href="${blob(`results/${run.name}/report.md`)}#differences-verbatim-normalised-form">Every difference, verbatim</a>, and <a href="${blob(`results/${run.name}/report.md`)}#diagnostics">the full tables</a> in the run's report.</p>
 </section>`;
 }
 
@@ -294,7 +307,10 @@ main>section:last-child{border-bottom:0}
 .race-head{display:grid;grid-template-columns:88px 1fr 380px;align-items:end;margin-bottom:6px}
 .clock{grid-column:2;font:600 40px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:-.03em}
 .clock small{font-size:.45em;font-weight:500;color:var(--dim);letter-spacing:0}
-.clock .t{display:inline-block}
+.clock .t{display:inline-flex}
+.clock .d{display:inline-block;width:1ch;height:1em;overflow:hidden;-webkit-mask-image:linear-gradient(transparent,#000 14%,#000 86%,transparent);mask-image:linear-gradient(transparent,#000 14%,#000 86%,transparent);transition:opacity .2s}
+.clock .strip{display:block;will-change:transform}
+.clock .strip span{display:block;height:1em;line-height:1em;text-align:center}
 .speed{font:500 12.5px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;color:var(--dim);letter-spacing:0;margin-left:12px}
 .lead .clock{font-size:64px}
 .cols{display:grid;grid-template-columns:repeat(4,1fr);text-align:right;font-size:12.5px;color:var(--dim)}
@@ -335,6 +351,24 @@ main>section:last-child{border-bottom:0}
 .grid tbody th{position:sticky;left:0;background:var(--bg);font-weight:600}
 .num{text-align:right}
 .ok{color:var(--ok)}.diff{color:var(--warn)}
+.dgrid{--lw:170px;--tw:62px;--gap:4px;margin-top:12px}
+.dtable{border-collapse:separate;border-spacing:var(--gap);margin-left:calc(-1*var(--gap));table-layout:fixed;width:calc(var(--lw) + var(--n)*var(--tw) + (var(--n) + 2)*var(--gap))}
+.dtable .lc{width:var(--lw)}.dtable .tc{width:var(--tw)}
+.dtable.head{margin-bottom:-2px}
+.dcheck .summary{margin:2px 0 20px calc(var(--lw) + var(--gap))}
+.sublabel .short{display:none}
+.dtable thead th{font-weight:600;font-size:14px;text-align:center;padding:0 2px}
+.dtable .states th{font-weight:500;font-size:12.5px;color:var(--dim);padding:2px 2px 8px;white-space:nowrap}
+.dtable .states th span{display:block;font-size:11.5px;font-weight:400}
+.dtable tbody th{text-align:left;vertical-align:middle;font-weight:600;font-size:15px;padding-right:16px;white-space:nowrap}
+.dtable .sublabel{font-weight:400;font-size:12.5px;color:var(--dim)}
+.tile{height:34px;text-align:center;border-radius:5px;background:var(--soft);font-weight:600;font-size:14px;white-space:nowrap}
+.tile.ok{background:color-mix(in srgb,var(--ok) 15%,transparent);color:var(--ok)}
+.tile.diff{background:color-mix(in srgb,var(--warn) 15%,transparent);color:var(--warn)}
+.summary{font-size:14px;color:var(--dim);max-width:64ch}
+.summary code{color:var(--fg)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 22px;max-width:none}
+.legend b{margin-right:6px}
 .tag{font-size:11.5px;font-weight:500;color:var(--dim);margin-left:8px}
 .facts{display:grid;grid-template-columns:160px 1fr;gap:10px 20px;margin:18px 0;max-width:860px}
 .facts dt{color:var(--dim);font-size:14.5px}
@@ -354,6 +388,12 @@ footer{color:var(--dim);font-size:14px;padding-top:28px;padding-bottom:56px}
  .ticks{grid-column:1}
  .facts{grid-template-columns:1fr;gap:2px}.facts dd{margin-bottom:10px}
  .lede{font-size:17px}
+ .dgrid{--lw:66px;--tw:calc((100vw - 40px - var(--lw) - (var(--n) + 2)*var(--gap)) / var(--n));--gap:3px}
+ .tile{height:30px;font-size:12.5px}
+ .dtable tbody th{font-size:14px;padding-right:4px}
+ .dtable .states th{font-size:11.5px}.dtable .states th span{font-size:10.5px}
+ .sublabel .long{display:none}.sublabel .short{display:inline}
+ .dcheck .summary{margin-left:0}
  .nav .label,.nav .hint{display:none}
  .seg button{padding:6px 11px}
 }
@@ -363,22 +403,54 @@ const JS = `
 document.documentElement.classList.add("js");
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 let setting = "default";
+// The clock is an odometer: each digit is a strip of 0-9 moved by a transform. The last digit scrolls
+// continuously; each other digit rolls over only while the digit below it passes from 9 to 0.
+function buildClock(race) {
+	const t = race.querySelector(".t");
+	const text = t.textContent;
+	const [whole, frac = ""] = text.split(".");
+	const cols = [];
+	t.textContent = "";
+	let place = 10 ** (whole.length - 1);
+	for (const ch of text) {
+		if (ch === ".") { t.append("."); continue; }
+		const d = document.createElement("span");
+		d.className = "d";
+		const strip = document.createElement("span");
+		strip.className = "strip";
+		for (let i = 0; i <= 10; i++) { const n = document.createElement("span"); n.textContent = String(i % 10); strip.append(n); }
+		d.append(strip);
+		t.append(d);
+		cols.push({ d, strip, place });
+		place /= 10;
+	}
+	race.clock = { cols, lowest: cols[cols.length - 1].place };
+}
+function setClock(race, v, exact) {
+	for (const c of race.clock.cols) {
+		let pos;
+		if (exact) pos = Math.floor(v / c.place + 1e-6) % 10;
+		else if (c.place === race.clock.lowest) pos = (v / c.place) % 10;
+		else pos = (Math.floor(v / c.place) % 10) + Math.max(0, ((v / (c.place / 10)) % 10) - 9);
+		c.strip.style.transform = "translateY(" + (-pos) + "em)";
+		// A leading digit that is still zero (9.9 s on the way to 18.98 s) stays hidden.
+		c.d.style.opacity = c.place > 1 && v < c.place ? "0" : "1";
+	}
+}
 function tick(race) {
-	const clock = race.querySelector(".clock");
 	const end = parseFloat(race.dataset.slowest);
 	const speed = parseFloat(race.dataset.speed);
-	const digits = clock.querySelector(".t");
-	// Tenths while running, which the eye can follow; the exact median once the slowest bar stops.
-	const show = (t, done) => { digits.textContent = done ? end.toFixed(2) : t.toFixed(1); };
-	if (reduce) { show(end, true); return; }
+	if (reduce) { setClock(race, end, true); return; }
 	const t0 = performance.now();
 	const step = now => {
 		const t = Math.min(((now - t0) / 1000) * speed, end);
-		show(t, t >= end);
-		if (t < end && race.classList.contains("run")) requestAnimationFrame(step);
+		if (t >= end) { setClock(race, end, true); return; }
+		setClock(race, t, false);
+		if (race.classList.contains("run")) requestAnimationFrame(step);
 	};
 	requestAnimationFrame(step);
 }
+document.querySelectorAll(".race").forEach(r => { buildClock(r); setClock(r, parseFloat(r.dataset.slowest), true); });
 function play(race) {
 	race.classList.remove("run");
 	void race.offsetWidth;
