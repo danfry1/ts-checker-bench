@@ -4,6 +4,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { type Checker, type Project, FIXTURES_DIR, PLATFORM, RESULTS_DIR, ROOT, availableHere, binaryPath, checkers, command, explainers, invocation, project, projectDir, projects, reference, threadFlags, timed } from "./config.ts";
+import { rotate } from "./analysis.ts";
 import { awakeWrapper, cpuModel, freshDirectoryVariables, holdAwake, measure, osEvents, osName, power } from "./platform.ts";
 import { type Preflight, preflight, printPreflight } from "./preflight.ts";
 import { type Gate, type Phase, type RunMeta, CSV_COLUMNS, csvLine, gateOutcome } from "./results.ts";
@@ -133,6 +134,7 @@ function startMeta(pl: Plan, pre: Preflight, keptAwakeBy: string | null): RunMet
 		preflight: { blocking: pre.blocking, warnings: pre.warnings, power: pre.power },
 		loadAtStart: loadAverage(),
 		keptAwakeBy,
+		roundOrder: "rotating",
 		environment: Object.fromEntries(Object.entries(process.env).filter((e): e is [string, string] => TOOL_ENV.test(e[0]) && e[1] !== undefined)),
 		checkers: checkers.map(c => {
 			const base = { name: c.name, package: `${c.package}@${c.version}`, role: c.role ?? "candidate" };
@@ -218,9 +220,13 @@ function coldCheck(rec: Recorder, p: Project): void {
 	}
 }
 
-/** 1 warm-up round, then the timed rounds. */
-function rounds(iterations: number, each: (iteration: string) => void): void {
-	for (const iteration of ["warm", ...Array.from({ length: iterations }, (_, i) => String(i + 1))]) each(iteration);
+/**
+ * 1 warm-up round, then the timed rounds. Each round runs the checkers in turn, starting one place
+ * further along the list than the round before, so no checker always runs first or last.
+ */
+function rounds(iterations: number, each: (iteration: string, order: Checker[]) => void): void {
+	const iterationNames = ["warm", ...Array.from({ length: iterations }, (_, i) => String(i + 1))];
+	iterationNames.forEach((iteration, i) => each(iteration, rotate(runnable(), i)));
 }
 
 function measureAll(rec: Recorder, pl: Plan): void {
@@ -231,12 +237,12 @@ function measureAll(rec: Recorder, pl: Plan): void {
 		fileLists(rec, p);
 		diagnostics(rec, p);
 		coldCheck(rec, p);
-		rounds(pl.iterations, iteration => {
-			for (const c of runnable()) rec.time(p, "default", c, "default", iteration);
+		rounds(pl.iterations, (iteration, order) => {
+			for (const c of order) rec.time(p, "default", c, "default", iteration);
 		});
 		for (const n of pl.threadCounts) {
-			rounds(pl.iterations, iteration => {
-				for (const c of runnable()) {
+			rounds(pl.iterations, (iteration, order) => {
+				for (const c of order) {
 					const flags = threadFlags(c, n);
 					if (flags) rec.time(p, "matched", c, String(n), iteration, flags);
 				}

@@ -14,7 +14,7 @@ What a run measures, how, and what it does not show. The numbers are in each run
    3. **File lists.** Each timed checker reports the files in its program (`files/`).
    4. **Diagnostics.** Every checker, plus the explain-only checker, runs twice on the clean checkout and twice with `fixtures/patches/<project>.patch` applied. The checkout is restored with `git checkout` afterwards (`parity/`).
    5. **Cold check.** Each timed checker runs 3 times in the normal environment, alternating with 3 runs under fresh, empty `HOME`, `TMPDIR` and `XDG_CACHE_HOME`. Any file written to those directories is recorded.
-   6. **Default threading.** 1 warm-up round, then 7 rounds. Each round runs every timed checker once, in a fixed order, with no thread flag.
+   6. **Default threading.** 1 warm-up round, then 7 rounds. Each round runs every timed checker once, with no thread flag. Each round starts one place further along the list of checkers than the round before, so over the rounds every checker runs in every position; runs before 2026-10-19 used a fixed order instead (see the caveats).
    7. **Matched threads.** The same, at 1, 4 and the CPU count threads, for checkers that document a thread flag (all five).
 4. **Records the conditions.** It writes the end time, load average, power state, and every sleep, wake, thermal or power event `pmset` logged during the run.
 5. **Reports.** It writes `report.md` and the README results block.
@@ -101,7 +101,7 @@ The projects differ in kind as well as size, and file count is a poor guide to h
 - **Narrow error injection.** The patches add a handful of errors per project, so they exercise little of each checker.
 - **Peak memory differs by OS.** It is maximum RSS on macOS and Linux, and peak working set of the process alone on Windows.
 - **Peak memory depends on each tool's memory management.** A checker with a garbage collector, such as tsgo (Go), peaks where its collector lets it, so a higher peak does not always mean more live data. It is still the memory the machine had to provide.
-- **Fixed order within a round.** Every round runs the checkers in the same order, tsgo first, as listed in `checkers.json`. Each round is short, the machine is otherwise idle and the warm-up round comes first, but any effect of order, such as thermal state building up through a round, falls on the same checker each time.
+- **Checker order in runs before 2026-10-19.** Those runs, including `2026-10-18-apple-m5-darwin`, ran the checkers in the same order every round, tsgo first, as listed in `checkers.json`. Each round is short, the machine is otherwise idle and the warm-up round comes first, but any effect of position in the round fell on the same checker each time. Later runs rotate the order; each report states which order its run used.
 - **Platform coverage differs.** A checker that publishes no build for a platform, such as tsrs on Windows, is recorded as not available there.
 
 ## What this does not show

@@ -82,3 +82,9 @@ test("tsc's extended diagnostics parse to numbers", () => {
 	const text = "Files:               593\nLines:            109590\nTypes:           5897031\nInstantiations: 17803065\nMemory used:    5521375K\nCheck time:      13.763s\n";
 	assert.deepEqual(a.parseWorkStats(text), { Files: 593, Lines: 109590, Types: 5897031, Instantiations: 17803065, "Memory used": 5521375, "Check time": 13.763 });
 });
+
+test("rotation starts one place further along and keeps every item", () => {
+	assert.deepEqual(a.rotate(["a", "b", "c"], 0), ["a", "b", "c"]);
+	assert.deepEqual(a.rotate(["a", "b", "c"], 1), ["b", "c", "a"]);
+	assert.deepEqual(a.rotate(["a", "b", "c"], 4), ["b", "c", "a"]);
+});

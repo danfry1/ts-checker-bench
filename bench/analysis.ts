@@ -47,6 +47,9 @@ export function summarize(runs: TimedRun[]): Summary {
 }
 
 /** How many times longer the reference took, as shown in tables: "4.3×". */
+/** The list started k places along, wrapping: rotate([a, b, c], 1) is [b, c, a]. */
+export const rotate = <T>(xs: T[], k: number): T[] => xs.map((_, i) => xs[(i + k) % xs.length]);
+
 export const ratio = (reference: number, value: number): string => `${(reference / value).toFixed(1)}×`;
 
 /** The fields /usr/bin/time -l (macOS) prints to stderr. */

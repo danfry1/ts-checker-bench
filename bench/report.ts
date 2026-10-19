@@ -186,6 +186,7 @@ function reportMarkdown(run: Run): string {
 	const charge = Math.min(...charges) < 0 ? "No battery." : `Charge ${Math.min(...charges)}–${Math.max(...charges)}%.`;
 	out.push(`- Power: ${ac ? `all ${run.rows.length} runs on AC` : "**some runs not on AC**"}. ${charge}`);
 	out.push(`- Kept awake by: ${m.keptAwakeBy ?? "**nothing** (sleep was not prevented)"}.`);
+	out.push(`- Checker order within each round: ${m.roundOrder === "rotating" ? "rotated, each round starting one place further along" : `fixed, ${m.checkers.find(c => c.role !== "explain" && c.available !== false)?.name} first`}.`);
 	const events = m.conditionsError ? `**not recorded** (${m.conditionsError})` : !m.osEvents ? "**not recorded**" : m.osEvents.events.length ? `**${m.osEvents.events.length}** (see run.json)` : "none";
 	out.push(`- Sleep, wake and thermal events during the run${m.osEvents ? ` (${m.osEvents.source})` : ""}: ${events}.`);
 	out.push(`- 1-minute load average ${m.loadAtStart.split(" ")[0]} at the start, ${m.loadAtEnd?.split(" ")[0] ?? "–"} at the end (the checkers' own threads raise it).`);
