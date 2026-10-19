@@ -34,3 +34,35 @@ jobs:
         working-directory: bench
       - name: Reports match the raw results
         run: node bench report --check
+
+  # A pull request that adds or changes a run (results/<run>/) is verified with the base branch's
+  # harness and lockfiles, so a change to the harness in the same pull request cannot vouch for it.
+  verify-runs:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          path: pr
+          fetch-depth: 0
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.base_ref }}
+          path: base
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - run: npm ci
+        working-directory: base/bench
+      - name: Verify each run the pull request adds or changes
+        working-directory: pr
+        run: |
+          runs=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD" -- results/ | awk -F/ 'NF > 2 { print $2 }' | sort -u)
+          if [ -z "$runs" ]; then echo "no runs added or changed"; exit 0; fi
+          status=0
+          for r in $runs; do
+            if [ -f "results/$r/run.json" ]; then
+              RESULTS_DIR="$PWD/results" node ../base/bench verify "$r" || status=1
+            fi
+          done
+          exit $status

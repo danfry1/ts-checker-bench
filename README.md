@@ -89,7 +89,7 @@ Checkers that port a different TypeScript build, compared byte for byte with tha
 
 Full report, with every thread setting, the cold check, file lists and every diagnostic difference verbatim: [`results/2026-10-19-apple-m5-darwin/report.md`](results/2026-10-19-apple-m5-darwin/report.md).
 
-Earlier runs on darwin-arm64, to compare: [`2026-10-18-apple-m5-darwin`](results/2026-10-18-apple-m5-darwin/report.md). Seconds can move between sessions on the same machine, so compare ratios rather than seconds.
+Other runs on darwin-arm64, to compare: [`2026-10-18-apple-m5-darwin`](results/2026-10-18-apple-m5-darwin/report.md). Seconds can move between sessions on the same machine, so compare ratios rather than seconds.
 <!-- results:end -->
 
 How to read these: every checker runs with its shipped defaults, plus only the project's own typecheck arguments. No tuning flags are used: not tsrs's `--checkerAssignment go`, and not tsc-rs's `--fast`. The first table uses each checker's default threading, and those defaults differ; the single-threaded table sets one thread with each checker's documented flag ([details](docs/METHOD.md#threads)). tsc-rs and tsrs port TypeScript 7.1-dev, not 7.0.2; two diagnostics-only builds of upstream tsgo 7.1-dev, one per port, show which of their diagnostic differences come from TypeScript 7.1 itself. Method, caveats and what the numbers do not show: [`docs/METHOD.md`](docs/METHOD.md).
@@ -127,6 +127,10 @@ node bench run          # about 40 minutes on a 10-core Mac; writes results/<dat
 ```
 
 `node bench run` keeps the machine awake (caffeinate, systemd-inhibit or SetThreadExecutionState), stops if it leaves AC power, and writes the run's report and this README's results block at the end. `node bench run --dry-run` prints every command it would run.
+
+## Add your machine
+
+Results from one machine only go so far. If you have a different machine (Linux, Windows, Intel, AMD, a desktop or a server), a run from it is welcome: follow [`AGENTS.md`](AGENTS.md) and open a pull request with the new `results/` folder. CI checks that the run is complete, ran on AC power without sleep or thermal events, and timed the exact binaries published on npm for your platform. A run is published as it was measured, including a checker that crashes or is slower than expected.
 
 ## Add a checker or a version
 

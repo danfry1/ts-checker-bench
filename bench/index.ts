@@ -11,6 +11,7 @@
 //                                                  checks the harness end to end in about 6 minutes
 //   report [<run>] [--check]   write results/<run>/report.md, the README results block and site/
 //   site-image             render site/og.html to site/og.png, the link preview (needs Chrome)
+//   verify <run>           check a run is complete and timed the published checkers (downloads them)
 //
 // See docs/METHOD.md for what a run measures and why.
 import fs from "node:fs";
@@ -20,6 +21,7 @@ import { SITE_DIR, report } from "./report.ts";
 import { run } from "./run.ts";
 import { setup } from "./setup.ts";
 import { renderSiteImage } from "./site.ts";
+import { verify } from "./verify.ts";
 
 const FLAGS = new Set(["--dry-run", "--check", "--smoke"]);
 
@@ -54,11 +56,15 @@ switch (positional[0]) {
 	case "report":
 		report(positional[1], { check: options.check === true });
 		break;
+	case "verify":
+		if (!positional[1]) throw new Error("usage: node bench verify <run>");
+		await verify(positional[1]);
+		break;
 	case "site-image":
 		renderSiteImage(SITE_DIR);
 		break;
 	default: {
-		const usage = fs.readFileSync(import.meta.filename, "utf8").split("\n").slice(0, 15);
+		const usage = fs.readFileSync(import.meta.filename, "utf8").split("\n").slice(0, 16);
 		console.log(usage.map(l => l.replace(/^\/\/ ?/, "")).join("\n"));
 		process.exitCode = positional[0] ? 1 : 0;
 	}

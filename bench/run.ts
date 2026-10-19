@@ -299,5 +299,6 @@ export function run(options: RunOptions): void {
 	}
 	finish(rec);
 	if (pl.smoke) reportRun(pl.name);
-	else report(pl.name);
+	// The README block and the site keep showing the headline run (results/headline.txt) and link this one.
+	else report();
 }

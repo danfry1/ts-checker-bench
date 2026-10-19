@@ -13,4 +13,6 @@ One folder per run, named `<date>-<cpu>-<os>`, written by `node bench run`:
 | `help/` | Each checker's `--help` output, as installed |
 | `report.md` | Generated from the files above by `node bench report` |
 
+`headline.txt` names the run the README results block and the site show; every other run is linked from them.
+
 Raw files are kept as the tools printed them, except that absolute paths are made machine-independent: paths in a project checkout become relative to it, other paths in this repository become relative to it (such as `tools/<checker>/...` for bundled libs), and the home directory becomes `~`. The same rewrite is applied to every checker's output, so comparisons between them are unaffected. `report.md` and the README results block are generated, and CI checks that they match.

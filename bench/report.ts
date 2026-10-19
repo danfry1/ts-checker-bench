@@ -6,11 +6,13 @@ import path from "node:path";
 import { RESULTS_DIR, ROOT, checkers as configured, projects as configuredProjects } from "./config.ts";
 import { type Summary, countFiles, lineDiff, maskElapsed, normalizeDiagnostics, normalizeFileList, parseBunTiming, parseWorkStats, ratio, summarize } from "./analysis.ts";
 import { COLOURS, raceSvg } from "./race.ts";
-import { ogHtml, ogImageCurrent, siteHtml } from "./site.ts";
+import { ogHtml, ogImageCurrent, renderSiteImage, siteHtml } from "./site.ts";
 import { type Gate, type Run, gateOutcome, listRuns, loadRun } from "./results.ts";
 
 const README = path.join(ROOT, "README.md");
 export const SITE_DIR = path.join(ROOT, "site");
+/** One line: the run the README block and the site show. Other runs are linked from them. */
+const HEADLINE = path.join(RESULTS_DIR, "headline.txt");
 const START = "<!-- results:start -->";
 const END = "<!-- results:end -->";
 export const DIFF_LEGEND = "+n / −m: after normalising, n diagnostics only in that checker and m only in the reference. Every difference is listed verbatim in the run's report.";
@@ -491,7 +493,7 @@ function readmeBlock(run: Run, others: Run[], earlier: Run[]): string {
 		"",
 		...(ownBuildTable(run).length ? ["### Diagnostics compared with each checker's upstream build", "", "Checkers that port a different TypeScript build, compared byte for byte with that build's own output.", "", ...ownBuildTable(run), ""] : []),
 		`Full report, with every thread setting, the cold check, file lists and every diagnostic difference verbatim: [\`results/${run.name}/report.md\`](results/${run.name}/report.md).`,
-		...(earlier.length ? ["", `Earlier runs on ${m.machine.platform}, to compare: ` + earlier.map(e => `[\`${e.name}\`](results/${e.name}/report.md)`).join(", ") + ". Seconds can move between sessions on the same machine, so compare ratios rather than seconds."] : []),
+		...(earlier.length ? ["", `Other runs on ${m.machine.platform}, to compare: ` + earlier.map(e => `[\`${e.name}\`](results/${e.name}/report.md)`).join(", ") + ". Seconds can move between sessions on the same machine, so compare ratios rather than seconds."] : []),
 		...(others.length ? ["", "Latest run on other platforms: " + others.map(o => `[${o.meta.machine.platform}, ${o.meta.machine.cpu}](results/${o.name}/report.md)`).join(", ") + "."] : []),
 		END,
 	].join("\n");
@@ -534,7 +536,10 @@ export function report(name?: string, { check = false }: { check?: boolean } = {
 		writeOrCheck(path.join(RESULTS_DIR, r, "report.md"), reportMarkdown(run) + "\n", check);
 		for (const [file, svg] of races(run)) writeOrCheck(path.join(RESULTS_DIR, r, file), svg, check);
 	}
-	const latest = loadRun(name ?? all[all.length - 1]);
+	// The headline run: the named one, else the one results/headline.txt names, else the newest.
+	const headline = fs.existsSync(HEADLINE) ? fs.readFileSync(HEADLINE, "utf8").trim() : "";
+	if (headline && !all.includes(headline)) throw new Error(`results/headline.txt names ${headline}, which is not a run`);
+	const latest = loadRun(name ?? (headline || all[all.length - 1]));
 	// The latest run on each other platform, linked below the tables.
 	const byPlatform = new Map<string, Run>();
 	const earlier: Run[] = [];
@@ -550,7 +555,15 @@ export function report(name?: string, { check = false }: { check?: boolean } = {
 	const og = ogHtml(latest);
 	writeOrCheck(path.join(SITE_DIR, "og.html"), og, check);
 	if (!ogImageCurrent(SITE_DIR, og)) {
-		console.error("out of date: site/og.png (run node bench site-image)");
-		if (check) process.exitCode = 1;
+		if (check) {
+			console.error("out of date: site/og.png (run node bench site-image)");
+			process.exitCode = 1;
+		} else {
+			try {
+				renderSiteImage(SITE_DIR);
+			} catch (e) {
+				console.error(`site/og.png not updated: ${(e as Error).message}. Run node bench site-image where Chrome is installed.`);
+			}
+		}
 	}
 }

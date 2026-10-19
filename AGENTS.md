@@ -55,5 +55,6 @@ Leave the machine alone for the whole run. The run writes `results/<date>-<cpu>-
 ## 6. Hand back
 
 1. `(cd bench && npm run check)` must pass.
-2. Commit only the new `results/<date>-<cpu>-<os>/` folder and the README change, on a branch, and open a pull request. Do not commit `projects/`, `node_modules/` or `results/.smoke/`.
-3. In the pull request, paste the "Conditions" section of the run's `report.md` and every preflight warning. Also include anything unusual: a checker that crashed, a gate that failed, or a step that needed a retry.
+2. `node bench verify <date>-<cpu>-<os>` should pass. It checks that the run is complete, ran under the documented conditions, and timed the published checkers: it downloads each checker's package for your platform from the npm registry and compares its binary with the sha256 the run recorded. CI runs the same check on the pull request, with the main branch's harness.
+3. Commit the new `results/<date>-<cpu>-<os>/` folder and the regenerated `README.md` (it gains a link to your run), on a branch, and open a pull request. The README results block and the site keep showing the run named in `results/headline.txt`; do not change it. Do not commit `projects/`, `node_modules/` or `results/.smoke/`.
+4. Fill in the pull request template: paste the "Conditions" section of the run's `report.md` and every preflight warning, and describe the machine. Also include anything unusual: a checker that crashed, a gate that failed, or a step that needed a retry.

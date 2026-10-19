@@ -361,6 +361,7 @@ const STEPS: [string, string, string][] = [
 	["Check the machine", "Refuses to start on battery or with a checkout that is not ready; warns about busy processes.", "node bench preflight"],
 	["Try it end to end", "type-fest only, one round, about 6 minutes. Not published.", "node bench run --smoke"],
 	["Run the benchmark", "About 40 minutes on a 10-core Mac, longer on slower ones. Writes results/<date>-<cpu>-<os>/ with its report.", "node bench run"],
+	["Send it", "Check the run as CI will, then open a pull request with its results/ folder. Runs from other machines are welcome.", "node bench verify <date>-<cpu>-<os>"],
 ];
 
 const FAVICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect x="3" y="6" width="26" height="5" rx="2" fill="#8a8f98"/><rect x="3" y="14" width="16" height="5" rx="2" fill="#3178c6"/><rect x="3" y="22" width="9" height="5" rx="2" fill="#19a979"/></svg>`;
