@@ -8,8 +8,6 @@ export interface Lane {
 	seconds: number;
 	/** e.g. "5.7×" */
 	ratio: string;
-	/** The checker reported errors where the reference reported none. */
-	marked: boolean;
 }
 
 export interface RaceData {
@@ -62,7 +60,7 @@ export function raceSvg(data: RaceData): string {
 			`<text class="name" x="16" y="${cy + 4}">${escape(l.checker)}</text>`,
 			`<rect class="track" x="${TRACK_START}" y="${cy - BAR_HEIGHT / 2}" width="${TRACK_END - TRACK_START}" height="${BAR_HEIGHT}" rx="4"/>`,
 			`<rect class="bar" x="${TRACK_START}" y="${cy - BAR_HEIGHT / 2}" width="${TRACK_END - TRACK_START}" height="${BAR_HEIGHT}" rx="4" fill="${data.colours[l.checker]}" style="transform:scaleX(${scale})"/>`,
-			`<text class="value" x="${TRACK_END + 16}" y="${cy + 4}">${l.seconds.toFixed(2)} s${l.marked ? " ¹" : ""}</text>`,
+			`<text class="value" x="${TRACK_END + 16}" y="${cy + 4}">${l.seconds.toFixed(2)} s</text>`,
 			`<text class="value" x="${WIDTH - 16}" y="${cy + 4}" text-anchor="end">${escape(l.ratio)}</text>`,
 			"</g>",
 		);

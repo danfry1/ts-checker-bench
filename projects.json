@@ -1,8 +1,9 @@
 {
-  "$comment": "Every project checked. A project is benchmarked only if the reference checker reports 0 errors on it (the gate); otherwise the run records why it was rejected. Fields: repo/sha: what `node bench setup` clones into projects/<name>/; install: steps run in the checkout, in order: {run: [program, ...args], env?}, {copy: [from, to]} or {remove: path}, where {fixtures} is the fixtures/ directory; no shell is used, so the steps work on every OS; node: minimum Node version the install needs (fnm is used to get it when the current node is older); args: the project's own typecheck arguments, with where they come from; patch: deliberate type errors for the parity check, in fixtures/patches/.",
+  "$comment": "Every project checked. A project is benchmarked only if the reference checker reports 0 errors on it (the gate); otherwise the run records why it was rejected. Fields: title: the display name in charts; repo/sha: what `node bench setup` clones into projects/<name>/; install: steps run in the checkout, in order: {run: [program, ...args], env?}, {copy: [from, to]} or {remove: path}, where {fixtures} is the fixtures/ directory; no shell is used, so the steps work on every OS; node: minimum Node version the install needs (fnm is used to get it when the current node is older); args: the project's own typecheck arguments, with where they come from; patch: deliberate type errors for the parity check, in fixtures/patches/.",
   "projects": [
     {
       "name": "type-fest",
+      "title": "type-fest",
       "description": "A type-level library; its check cost is almost all its own test-d suite",
       "repo": "https://github.com/sindresorhus/type-fest",
       "sha": "b550b410e13ff6bf9e1467b863b6ebd120e70781",
@@ -24,6 +25,7 @@
     },
     {
       "name": "outline",
+      "title": "Outline",
       "description": "A knowledge-base web app",
       "repo": "https://github.com/outline/outline",
       "sha": "ef7753dc57a6117475ba9703fa683593a68e1ae4",
@@ -41,6 +43,7 @@
     },
     {
       "name": "vscode",
+      "title": "VS Code",
       "description": "The VS Code editor's main sources",
       "repo": "https://github.com/microsoft/vscode",
       "sha": "4a82da11e45fee7aa77017b2188b6a394f994074",
@@ -56,6 +59,7 @@
     },
     {
       "name": "excalidraw",
+      "title": "Excalidraw",
       "description": "A whiteboard web app",
       "repo": "https://github.com/excalidraw/excalidraw",
       "sha": "4c37956ba5f04ec342a9d9d5891a38f22c5b7b4e",

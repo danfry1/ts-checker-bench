@@ -3,7 +3,7 @@
 // With check, writes nothing and fails if either is out of date.
 import fs from "node:fs";
 import path from "node:path";
-import { RESULTS_DIR, ROOT, checkers as configured } from "./config.ts";
+import { RESULTS_DIR, ROOT, checkers as configured, projects as configuredProjects } from "./config.ts";
 import { type Summary, countFiles, lineDiff, maskElapsed, normalizeDiagnostics, normalizeFileList, parseBunTiming, ratio, summarize } from "./analysis.ts";
 import { COLOURS, raceSvg } from "./race.ts";
 import { type Gate, type Run, gateOutcome, listRuns, loadRun } from "./results.ts";
@@ -205,9 +205,9 @@ function reportMarkdown(run: Run): string {
 	}
 	out.push("");
 
-	out.push("## Default threading", "", ...unavailableNote(run), timingTable(run, "default", "default", checkers, ref), "", resourceTable(run, checkers), "");
+	out.push("## Default threading", "", ...unavailableNote(run), ...raceImages(run, "", ""), timingTable(run, "default", "default", checkers, ref), "", resourceTable(run, checkers), "");
 	for (const n of m.threadCounts) {
-		out.push(`## ${n === 1 ? "Single-threaded" : `${n} threads`}`, "", `${threaded.join(", ")}; checkers without a documented thread flag are not included.`, "", timingTable(run, "matched", n, threaded, ref), "");
+		out.push(`## ${n === 1 ? "Single-threaded" : `${n} threads`}`, "", `${threaded.join(", ")}; checkers without a documented thread flag are not included.`, "", ...(n === 1 ? raceImages(run, "-single-threaded", "") : []), timingTable(run, "matched", n, threaded, ref), "");
 	}
 
 	out.push("## Cold check", "", `Normal environment vs fresh empty ${m.coldCheckVariables.join(", ")}, 3 runs each.`, "", "| Checker | " + projects.map(p => `${p} normal | ${p} fresh`).join(" | ") + " |", "|---|" + projects.map(() => "---|---|").join(""));
@@ -251,7 +251,45 @@ function reportMarkdown(run: Run): string {
 
 // ---------------------------------------------------------------------------- race animation
 
-/** results/<run>/race-<project>.svg: the default-threading medians of one project, animated. */
+/** The race charts: default threading, and single-threaded where the checkers document a flag. */
+const RACES = [
+	{ suffix: "", phase: "default", threads: "default", label: "default threading" },
+	{ suffix: "-single-threaded", phase: "matched", threads: "1", label: "single-threaded" },
+] as const;
+
+const raceFile = (project: string, suffix: string) => `race-${project}${suffix}.svg`;
+const projectTitle = (name: string) => configuredProjects.find(p => p.name === name)?.title ?? name;
+
+/**
+ * How each checker's diagnostics compare with the reference's on this project: the checkers that
+ * match, then the others, each noting whether it matches an explain-only checker instead (for
+ * example tsgo 7.1-dev, the TypeScript version tsc-rs and tsrs port).
+ */
+function diagnosticsLines(run: Run, project: string): string[] {
+	const ref = referenceName(run);
+	const results = parity(run, project);
+	const explainers = run.meta.checkers.filter(c => c.role === "explain" && c.available !== false).map(c => c.name);
+	const diagnostics = (state: string, checker: string) => normalizeDiagnostics(run.read("parity", project, `${state}.${checker}.txt`) ?? "").join("\n");
+	const same: string[] = [];
+	const differ: string[] = [];
+	for (const c of timedNames(run).filter(c => c !== ref)) {
+		const mine = results.filter(r => r.checker === c);
+		if (mine.every(r => r.normalized)) {
+			same.push(c);
+			continue;
+		}
+		const clean = mine.find(r => r.state === "clean" && !r.normalized);
+		const shown = clean ?? mine.find(r => !r.normalized)!;
+		const matches = explainers.filter(e => mine.every(r => diagnostics(r.state, c) === diagnostics(r.state, e)));
+		differ.push(`${c} ${clean ? "" : "with planted errors "}+${shown.extra.length} / −${shown.missing.length}${matches.length ? ` (same as ${matches.join(", ")})` : ""}`);
+	}
+	return [
+		`Same diagnostics as ${ref}, clean and with planted errors: ${same.length ? same.join(", ") : "none"}.`,
+		...(differ.length ? [`Different: ${differ.join(" · ")}.`] : []),
+	];
+}
+
+/** results/<run>/race-<project>[-single-threaded].svg: the medians of one project, animated. */
 function races(run: Run): Map<string, string> {
 	const ref = referenceName(run);
 	const m = run.meta;
@@ -259,23 +297,31 @@ function races(run: Run): Map<string, string> {
 	const colours = Object.fromEntries(names.map((c, i) => [c, COLOURS[i % COLOURS.length]]));
 	const out = new Map<string, string>();
 	for (const p of benchmarked(run)) {
-		const lanes = names.flatMap(c => {
-			const s = stat(run, p, "default", c);
-			const r = stat(run, p, "default", ref);
-			if (!s || !r) return [];
-			return [{ checker: c, seconds: s.median, ratio: c === ref ? "1.0×" : ratio(r.median, s.median), marked: s.exits.some(e => e !== 0) }];
-		}).sort((a, b) => b.seconds - a.seconds);
-		out.set(p, raceSvg({
-			project: p,
-			subtitle: `Cold full type check, real time. ${m.machine.cpu}, ${m.machine.os}, default threading, median of ${m.iterations} runs.`,
-			ratioHeading: `vs ${ref}`,
-			lanes,
-			footnotes: [`"vs ${ref}": ${ref}'s median divided by the checker's. Run ${run.name}.`, ...(lanes.some(l => l.marked) ? [`¹ reported errors where ${ref} reported none.`] : [])],
-			colours,
-		}));
+		const refFiles = files(run, p).find(f => f.checker === ref);
+		const size = refFiles?.kind === "list" ? `${refFiles.project.toLocaleString("en-US")} project files · ` : "";
+		for (const race of RACES) {
+			const lanes = names.flatMap(c => {
+				const s = stat(run, p, race.phase, c, race.threads);
+				const r = stat(run, p, race.phase, ref, race.threads);
+				if (!s || !r) return [];
+				return [{ checker: c, seconds: s.median, ratio: c === ref ? "1.0×" : ratio(r.median, s.median) }];
+			}).sort((a, b) => b.seconds - a.seconds);
+			if (lanes.length < 2) continue;
+			out.set(raceFile(p, race.suffix), raceSvg({
+				project: `${projectTitle(p)}, ${race.label}`,
+				subtitle: `${size}cold full type check in real time · ${m.machine.cpu}, ${m.machine.os} · median of ${m.iterations} runs`,
+				ratioHeading: `vs ${ref}`,
+				lanes,
+				footnotes: [...diagnosticsLines(run, p), `"vs ${ref}": ${ref}'s median divided by the checker's. +n / −m: diagnostics only in the checker / only in ${ref}.`],
+				colours,
+			}));
+		}
 	}
 	return out;
 }
+
+const raceImages = (run: Run, suffix: string, dir: string) =>
+	benchmarked(run).flatMap(p => [`![${projectTitle(p)}: each checker's median wall time, animated in real time](${dir}${raceFile(p, suffix)})`, ""]);
 
 // ---------------------------------------------------------------------------- README block
 
@@ -291,7 +337,9 @@ function readmeBlock(run: Run, others: Run[]): string {
 		`Latest run: [\`${run.name}\`](results/${run.name}/report.md), ${m.machine.cpu}, ${m.machine.os}, ${m.started.slice(0, 10)}. Wall time is the median of ${m.iterations} runs (min–max); "vs ${ref}" is ${ref}'s median divided by the checker's. ¹: the checker reported errors where ${ref} reported none.`,
 		"",
 		...(m.note ? [`**Note:** ${m.note}`, ""] : []),
-		...benchmarked(run).flatMap(p => [`![${p}: each checker's median wall time, animated in real time](results/${run.name}/race-${p}.svg)`, ""]),
+		...raceImages(run, "", `results/${run.name}/`),
+		`The same races single-threaded, every checker with its documented one-thread flag: [in the run's report](results/${run.name}/report.md#single-threaded).`,
+		"",
 		"### Default threading",
 		"",
 		...unavailableNote(run),
@@ -352,7 +400,7 @@ export function report(name?: string, { check = false }: { check?: boolean } = {
 	for (const r of all) {
 		const run = loadRun(r);
 		writeOrCheck(path.join(RESULTS_DIR, r, "report.md"), reportMarkdown(run) + "\n", check);
-		for (const [p, svg] of races(run)) writeOrCheck(path.join(RESULTS_DIR, r, `race-${p}.svg`), svg, check);
+		for (const [file, svg] of races(run)) writeOrCheck(path.join(RESULTS_DIR, r, file), svg, check);
 	}
 	const latest = loadRun(name ?? all[all.length - 1]);
 	// The latest run on each other platform, linked below the tables.

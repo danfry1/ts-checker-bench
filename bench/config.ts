@@ -30,6 +30,8 @@ export type InstallStep = { run: string[]; env?: Record<string, string> } | { co
 
 export interface Project {
 	name: string;
+	/** Display name in charts, e.g. "VS Code". */
+	title: string;
 	description: string;
 	repo: string;
 	sha: string;

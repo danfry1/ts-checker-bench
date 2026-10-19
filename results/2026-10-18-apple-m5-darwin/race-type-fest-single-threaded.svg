@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 312" width="760" height="312" role="img" aria-labelledby="t d">
+<title id="t">type-fest, single-threaded: wall time of one full type check</title>
+<desc id="d">502 project files · cold full type check in real time · Apple M5, macOS 26.5.1 (25F80) · median of 7 runs. tsgo 13.44 s (1.0×), tsc-ts 5.18 s (2.6×), tsrs 4.40 s (3.1×), bun 4.04 s (3.3×), tsc-rs 3.73 s (3.6×).</desc>
+<style>
+text{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:13px;fill:#1f2328}
+.bg{fill:#ffffff;stroke:#d1d9e0}.track{fill:#eff2f5}
+.title{font-size:16px;font-weight:600}.sub,.foot{font-size:12px;fill:#59636e}
+.value{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}
+.bar{transform-box:fill-box;transform-origin:left center}.bar,.value{animation-duration:15.94s;animation-timing-function:linear;animation-iteration-count:infinite}
+@keyframes b0{0%{transform:scaleX(0)}84.32%,100%{transform:scaleX(1.0000)}}
+@keyframes v0{0%,84.31%{opacity:0}84.32%,100%{opacity:1}}
+.l0 .bar{animation-name:b0}.l0 .value{animation-name:v0}
+@keyframes b1{0%{transform:scaleX(0)}32.50%,100%{transform:scaleX(0.3854)}}
+@keyframes v1{0%,32.49%{opacity:0}32.50%,100%{opacity:1}}
+.l1 .bar{animation-name:b1}.l1 .value{animation-name:v1}
+@keyframes b2{0%{transform:scaleX(0)}27.60%,100%{transform:scaleX(0.3274)}}
+@keyframes v2{0%,27.59%{opacity:0}27.60%,100%{opacity:1}}
+.l2 .bar{animation-name:b2}.l2 .value{animation-name:v2}
+@keyframes b3{0%{transform:scaleX(0)}25.35%,100%{transform:scaleX(0.3006)}}
+@keyframes v3{0%,25.34%{opacity:0}25.35%,100%{opacity:1}}
+.l3 .bar{animation-name:b3}.l3 .value{animation-name:v3}
+@keyframes b4{0%{transform:scaleX(0)}23.40%,100%{transform:scaleX(0.2775)}}
+@keyframes v4{0%,23.39%{opacity:0}23.40%,100%{opacity:1}}
+.l4 .bar{animation-name:b4}.l4 .value{animation-name:v4}
+@media (prefers-color-scheme:dark){.bg{fill:#0d1117;stroke:#3d444d}.track{fill:#21262d}text{fill:#e6edf3}.sub,.foot{fill:#9198a1}}
+@media (prefers-reduced-motion:reduce){.bar,.value{animation:none}}
+</style>
+<rect class="bg" x="0.5" y="0.5" width="759" height="311" rx="6"/>
+<text class="title" x="16" y="28">type-fest, single-threaded</text>
+<text class="sub" x="16" y="48">502 project files · cold full type check in real time · Apple M5, macOS 26.5.1 (25F80) · median of 7 runs</text>
+<text class="sub" x="576" y="72">median</text>
+<text class="sub" x="744" y="72" text-anchor="end">vs tsgo</text>
+<g class="l0">
+<text class="name" x="16" y="103">tsgo</text>
+<rect class="track" x="90" y="91" width="470" height="16" rx="4"/>
+<rect class="bar" x="90" y="91" width="470" height="16" rx="4" fill="#8a8f98" style="transform:scaleX(1.0000)"/>
+<text class="value" x="576" y="103">13.44 s</text>
+<text class="value" x="744" y="103" text-anchor="end">1.0×</text>
+</g>
+<g class="l1">
+<text class="name" x="16" y="133">tsc-ts</text>
+<rect class="track" x="90" y="121" width="470" height="16" rx="4"/>
+<rect class="bar" x="90" y="121" width="470" height="16" rx="4" fill="#3178c6" style="transform:scaleX(0.3854)"/>
+<text class="value" x="576" y="133">5.18 s</text>
+<text class="value" x="744" y="133" text-anchor="end">2.6×</text>
+</g>
+<g class="l2">
+<text class="name" x="16" y="163">tsrs</text>
+<rect class="track" x="90" y="151" width="470" height="16" rx="4"/>
+<rect class="bar" x="90" y="151" width="470" height="16" rx="4" fill="#19a979" style="transform:scaleX(0.3274)"/>
+<text class="value" x="576" y="163">4.40 s</text>
+<text class="value" x="744" y="163" text-anchor="end">3.1×</text>
+</g>
+<g class="l3">
+<text class="name" x="16" y="193">bun</text>
+<rect class="track" x="90" y="181" width="470" height="16" rx="4"/>
+<rect class="bar" x="90" y="181" width="470" height="16" rx="4" fill="#c94fb6" style="transform:scaleX(0.3006)"/>
+<text class="value" x="576" y="193">4.04 s</text>
+<text class="value" x="744" y="193" text-anchor="end">3.3×</text>
+</g>
+<g class="l4">
+<text class="name" x="16" y="223">tsc-rs</text>
+<rect class="track" x="90" y="211" width="470" height="16" rx="4"/>
+<rect class="bar" x="90" y="211" width="470" height="16" rx="4" fill="#e8743b" style="transform:scaleX(0.2775)"/>
+<text class="value" x="576" y="223">3.73 s</text>
+<text class="value" x="744" y="223" text-anchor="end">3.6×</text>
+</g>
+<text class="foot" x="16" y="260">Same diagnostics as tsgo, clean and with planted errors: tsc-ts, bun.</text>
+<text class="foot" x="16" y="278">Different: tsc-rs with planted errors +1 / −1 · tsrs with planted errors +1 / −1 (same as tsgo-7.1-dev).</text>
+<text class="foot" x="16" y="296">"vs tsgo": tsgo's median divided by the checker's. +n / −m: diagnostics only in the checker / only in tsgo.</text>
+</svg>

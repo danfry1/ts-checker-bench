@@ -1,4 +1,4 @@
-# ts-checker-bench
+<h1 align="center"><img src="docs/logo.svg" alt="ts-checker-bench" width="420"></h1>
 
 How fast are the TypeScript type checkers, and how do their diagnostics compare with tsgo's? This benchmark runs a cold, full-program type check of real projects with every checker, on the same machine, in the same session. It compares their speed, memory and diagnostics with Microsoft's tsgo, and publishes the raw output behind every number.
 
@@ -13,9 +13,11 @@ Latest run: [`2026-10-18-apple-m5-darwin`](results/2026-10-18-apple-m5-darwin/re
 
 ![type-fest: each checker's median wall time, animated in real time](results/2026-10-18-apple-m5-darwin/race-type-fest.svg)
 
-![outline: each checker's median wall time, animated in real time](results/2026-10-18-apple-m5-darwin/race-outline.svg)
+![Outline: each checker's median wall time, animated in real time](results/2026-10-18-apple-m5-darwin/race-outline.svg)
 
-![vscode: each checker's median wall time, animated in real time](results/2026-10-18-apple-m5-darwin/race-vscode.svg)
+![VS Code: each checker's median wall time, animated in real time](results/2026-10-18-apple-m5-darwin/race-vscode.svg)
+
+The same races single-threaded, every checker with its documented one-thread flag: [in the run's report](results/2026-10-18-apple-m5-darwin/report.md#single-threaded).
 
 ### Default threading
 
