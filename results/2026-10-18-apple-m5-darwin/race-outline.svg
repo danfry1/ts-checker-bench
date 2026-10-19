@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 294" width="760" height="294" role="img" aria-labelledby="t d">
+<title id="t">outline: wall time of one full type check</title>
+<desc id="d">Cold full type check, real time. Apple M5, macOS 26.5.1 (25F80), default threading, median of 7 runs.. tsgo 4.42 s (1.0×), tsc-rs 1.84 s (2.4×), bun 1.19 s (3.7×), tsc-ts 1.17 s (3.8×), tsrs 0.81 s (5.5×).</desc>
+<style>
+text{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:13px;fill:#1f2328}
+.bg{fill:#ffffff;stroke:#d1d9e0}.track{fill:#eff2f5}
+.title{font-size:16px;font-weight:600}.sub,.foot{font-size:12px;fill:#59636e}
+.value{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}
+.bar{transform-box:fill-box;transform-origin:left center}.bar,.value{animation-duration:6.92s;animation-timing-function:linear;animation-iteration-count:infinite}
+@keyframes b0{0%{transform:scaleX(0)}63.87%,100%{transform:scaleX(1.0000)}}
+@keyframes v0{0%,63.86%{opacity:0}63.87%,100%{opacity:1}}
+.l0 .bar{animation-name:b0}.l0 .value{animation-name:v0}
+@keyframes b1{0%{transform:scaleX(0)}26.59%,100%{transform:scaleX(0.4163)}}
+@keyframes v1{0%,26.58%{opacity:0}26.59%,100%{opacity:1}}
+.l1 .bar{animation-name:b1}.l1 .value{animation-name:v1}
+@keyframes b2{0%{transform:scaleX(0)}17.20%,100%{transform:scaleX(0.2692)}}
+@keyframes v2{0%,17.19%{opacity:0}17.20%,100%{opacity:1}}
+.l2 .bar{animation-name:b2}.l2 .value{animation-name:v2}
+@keyframes b3{0%{transform:scaleX(0)}16.91%,100%{transform:scaleX(0.2647)}}
+@keyframes v3{0%,16.90%{opacity:0}16.91%,100%{opacity:1}}
+.l3 .bar{animation-name:b3}.l3 .value{animation-name:v3}
+@keyframes b4{0%{transform:scaleX(0)}11.71%,100%{transform:scaleX(0.1833)}}
+@keyframes v4{0%,11.70%{opacity:0}11.71%,100%{opacity:1}}
+.l4 .bar{animation-name:b4}.l4 .value{animation-name:v4}
+@media (prefers-color-scheme:dark){.bg{fill:#0d1117;stroke:#3d444d}.track{fill:#21262d}text{fill:#e6edf3}.sub,.foot{fill:#9198a1}}
+@media (prefers-reduced-motion:reduce){.bar,.value{animation:none}}
+</style>
+<rect class="bg" x="0.5" y="0.5" width="759" height="293" rx="6"/>
+<text class="title" x="16" y="28">outline</text>
+<text class="sub" x="16" y="48">Cold full type check, real time. Apple M5, macOS 26.5.1 (25F80), default threading, median of 7 runs.</text>
+<text class="sub" x="576" y="72">median</text>
+<text class="sub" x="744" y="72" text-anchor="end">vs tsgo</text>
+<g class="l0">
+<text class="name" x="16" y="103">tsgo</text>
+<rect class="track" x="90" y="91" width="470" height="16" rx="4"/>
+<rect class="bar" x="90" y="91" width="470" height="16" rx="4" fill="#8a8f98" style="transform:scaleX(1.0000)"/>
+<text class="value" x="576" y="103">4.42 s</text>
+<text class="value" x="744" y="103" text-anchor="end">1.0×</text>
+</g>
+<g class="l1">
+<text class="name" x="16" y="133">tsc-rs</text>
+<rect class="track" x="90" y="121" width="470" height="16" rx="4"/>
+<rect class="bar" x="90" y="121" width="470" height="16" rx="4" fill="#e8743b" style="transform:scaleX(0.4163)"/>
+<text class="value" x="576" y="133">1.84 s ¹</text>
+<text class="value" x="744" y="133" text-anchor="end">2.4×</text>
+</g>
+<g class="l2">
+<text class="name" x="16" y="163">bun</text>
+<rect class="track" x="90" y="151" width="470" height="16" rx="4"/>
+<rect class="bar" x="90" y="151" width="470" height="16" rx="4" fill="#c94fb6" style="transform:scaleX(0.2692)"/>
+<text class="value" x="576" y="163">1.19 s</text>
+<text class="value" x="744" y="163" text-anchor="end">3.7×</text>
+</g>
+<g class="l3">
+<text class="name" x="16" y="193">tsc-ts</text>
+<rect class="track" x="90" y="181" width="470" height="16" rx="4"/>
+<rect class="bar" x="90" y="181" width="470" height="16" rx="4" fill="#3178c6" style="transform:scaleX(0.2647)"/>
+<text class="value" x="576" y="193">1.17 s</text>
+<text class="value" x="744" y="193" text-anchor="end">3.8×</text>
+</g>
+<g class="l4">
+<text class="name" x="16" y="223">tsrs</text>
+<rect class="track" x="90" y="211" width="470" height="16" rx="4"/>
+<rect class="bar" x="90" y="211" width="470" height="16" rx="4" fill="#19a979" style="transform:scaleX(0.1833)"/>
+<text class="value" x="576" y="223">0.81 s ¹</text>
+<text class="value" x="744" y="223" text-anchor="end">5.5×</text>
+</g>
+<text class="foot" x="16" y="260">"vs tsgo": tsgo's median divided by the checker's. Run 2026-10-18-apple-m5-darwin.</text>
+<text class="foot" x="16" y="278">¹ reported errors where tsgo reported none.</text>
+</svg>

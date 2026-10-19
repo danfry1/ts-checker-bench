@@ -11,7 +11,11 @@ New checker or new version? Edit one line in [`checkers.json`](checkers.json) an
 
 Latest run: [`2026-10-18-apple-m5-darwin`](results/2026-10-18-apple-m5-darwin/report.md), Apple M5, macOS 26.5.1 (25F80), 2026-10-18. Wall time is the median of 7 runs (min–max); "vs tsgo" is tsgo's median divided by the checker's. ¹: the checker reported errors where tsgo reported none.
 
-![Each checker's median wall time on each project, animated: a ball crosses its lane once per type check, in real time](results/2026-10-18-apple-m5-darwin/race.svg)
+![type-fest: each checker's median wall time, animated in real time](results/2026-10-18-apple-m5-darwin/race-type-fest.svg)
+
+![outline: each checker's median wall time, animated in real time](results/2026-10-18-apple-m5-darwin/race-outline.svg)
+
+![vscode: each checker's median wall time, animated in real time](results/2026-10-18-apple-m5-darwin/race-vscode.svg)
 
 ### Default threading
 
@@ -110,7 +114,7 @@ Projects are added the same way, in [`projects.json`](projects.json), with the p
 | [`bench/`](bench/) | The harness (`node bench <command>`) and the report generator |
 | [`tools/`](tools/) | One pinned install per checker |
 | [`fixtures/`](fixtures/) | Error-injection patches, type-fest's lockfile, a small type-fest consumer |
-| [`results/`](results/) | One folder per run: `run.json` (machine, versions, binary hashes, conditions), `timing.csv`, diagnostics, file lists, `--help` output, `report.md` and `race.svg` |
+| [`results/`](results/) | One folder per run: `run.json` (machine, versions, binary hashes, conditions), `timing.csv`, diagnostics, file lists, `--help` output, `report.md` and a `race-<project>.svg` per project |
 | [`docs/METHOD.md`](docs/METHOD.md) | Method and caveats |
 
 ## Independence

@@ -5,7 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { RESULTS_DIR, ROOT, checkers as configured } from "./config.ts";
 import { type Summary, countFiles, lineDiff, maskElapsed, normalizeDiagnostics, normalizeFileList, parseBunTiming, ratio, summarize } from "./analysis.ts";
-import { raceSvg } from "./race.ts";
+import { COLOURS, raceSvg } from "./race.ts";
 import { type Gate, type Run, gateOutcome, listRuns, loadRun } from "./results.ts";
 
 const README = path.join(ROOT, "README.md");
@@ -251,24 +251,30 @@ function reportMarkdown(run: Run): string {
 
 // ---------------------------------------------------------------------------- race animation
 
-/** results/<run>/race.svg: the default-threading medians, animated. */
-function race(run: Run): string {
+/** results/<run>/race-<project>.svg: the default-threading medians of one project, animated. */
+function races(run: Run): Map<string, string> {
 	const ref = referenceName(run);
 	const m = run.meta;
-	return raceSvg({
-		subtitle: `${m.machine.cpu}, ${m.machine.os}, default threading, median of ${m.iterations} runs (run ${run.name})`,
-		ratioHeading: `vs ${ref}`,
-		projects: benchmarked(run).map(p => ({
-			name: p,
-			lanes: timedNames(run).flatMap(c => {
-				const s = stat(run, p, "default", c);
-				const r = stat(run, p, "default", ref);
-				if (!s || !r) return [];
-				return [{ checker: c, seconds: s.median, ratio: c === ref ? "1.0×" : ratio(r.median, s.median), marked: s.exits.some(e => e !== 0) }];
-			}),
-		})),
-		footnotes: [`"vs ${ref}": ${ref}'s median divided by the checker's. Each checker uses its own default threading.`, `¹ reported errors where ${ref} reported none.`],
-	});
+	const names = timedNames(run);
+	const colours = Object.fromEntries(names.map((c, i) => [c, COLOURS[i % COLOURS.length]]));
+	const out = new Map<string, string>();
+	for (const p of benchmarked(run)) {
+		const lanes = names.flatMap(c => {
+			const s = stat(run, p, "default", c);
+			const r = stat(run, p, "default", ref);
+			if (!s || !r) return [];
+			return [{ checker: c, seconds: s.median, ratio: c === ref ? "1.0×" : ratio(r.median, s.median), marked: s.exits.some(e => e !== 0) }];
+		}).sort((a, b) => b.seconds - a.seconds);
+		out.set(p, raceSvg({
+			project: p,
+			subtitle: `Cold full type check, real time. ${m.machine.cpu}, ${m.machine.os}, default threading, median of ${m.iterations} runs.`,
+			ratioHeading: `vs ${ref}`,
+			lanes,
+			footnotes: [`"vs ${ref}": ${ref}'s median divided by the checker's. Run ${run.name}.`, ...(lanes.some(l => l.marked) ? [`¹ reported errors where ${ref} reported none.`] : [])],
+			colours,
+		}));
+	}
+	return out;
 }
 
 // ---------------------------------------------------------------------------- README block
@@ -285,8 +291,7 @@ function readmeBlock(run: Run, others: Run[]): string {
 		`Latest run: [\`${run.name}\`](results/${run.name}/report.md), ${m.machine.cpu}, ${m.machine.os}, ${m.started.slice(0, 10)}. Wall time is the median of ${m.iterations} runs (min–max); "vs ${ref}" is ${ref}'s median divided by the checker's. ¹: the checker reported errors where ${ref} reported none.`,
 		"",
 		...(m.note ? [`**Note:** ${m.note}`, ""] : []),
-		`![Each checker's median wall time on each project, animated: a ball crosses its lane once per type check, in real time](results/${run.name}/race.svg)`,
-		"",
+		...benchmarked(run).flatMap(p => [`![${p}: each checker's median wall time, animated in real time](results/${run.name}/race-${p}.svg)`, ""]),
 		"### Default threading",
 		"",
 		...unavailableNote(run),
@@ -347,7 +352,7 @@ export function report(name?: string, { check = false }: { check?: boolean } = {
 	for (const r of all) {
 		const run = loadRun(r);
 		writeOrCheck(path.join(RESULTS_DIR, r, "report.md"), reportMarkdown(run) + "\n", check);
-		writeOrCheck(path.join(RESULTS_DIR, r, "race.svg"), race(run), check);
+		for (const [p, svg] of races(run)) writeOrCheck(path.join(RESULTS_DIR, r, `race-${p}.svg`), svg, check);
 	}
 	const latest = loadRun(name ?? all[all.length - 1]);
 	// The latest run on each other platform, linked below the tables.
