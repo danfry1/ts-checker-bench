@@ -5,17 +5,18 @@
 
 export interface Lane {
 	checker: string;
+	/** The bar's length and how long it takes to grow. */
 	seconds: number;
-	/** e.g. "5.7×" */
-	ratio: string;
+	/** One per column, shown when the checker finishes, e.g. "1.44 s", "5.7×". */
+	values: string[];
 }
 
 export interface RaceData {
 	project: string;
 	/** Lines under the title: the project, then the machine and settings. */
 	subtitles: string[];
-	/** Heading of the ratio column, e.g. "vs tsgo". */
-	ratioHeading: string;
+	/** Column headings, one per Lane value. */
+	columns: string[];
 	lanes: Lane[];
 	/** One string per line. */
 	footnotes: string[];
@@ -23,9 +24,9 @@ export interface RaceData {
 	colours: Record<string, string>;
 }
 
-const WIDTH = 760;
+const WIDTH = 880;
 const TRACK_START = 90;
-const TRACK_END = 560;
+const TRACK_END = 500;
 const BAR_HEIGHT = 16;
 const LANE_HEIGHT = 30;
 /** Seconds the finished state is held before the race restarts. */
@@ -42,10 +43,10 @@ export function raceSvg(data: RaceData): string {
 	const css: string[] = [];
 	const body: string[] = [];
 	let y = 66 + data.subtitles.length * 18;
-	body.push(
-		`<text class="sub" x="${TRACK_END + 16}" y="${y - 12}">median</text>`,
-		`<text class="sub" x="${WIDTH - 16}" y="${y - 12}" text-anchor="end">${escape(data.ratioHeading)}</text>`,
-	);
+	// Columns are right-aligned, evenly spaced between the track and the right edge.
+	const columnWidth = (WIDTH - 16 - (TRACK_END + 16)) / data.columns.length;
+	const columnX = (k: number) => (TRACK_END + 16 + columnWidth * (k + 1)).toFixed(0);
+	body.push(...data.columns.map((h, k) => `<text class="sub" x="${columnX(k)}" y="${y - 12}" text-anchor="end">${escape(h)}</text>`));
 	data.lanes.forEach((l, i) => {
 		const cy = y + LANE_HEIGHT / 2;
 		const done = pct(l.seconds / cycle);
@@ -60,15 +61,14 @@ export function raceSvg(data: RaceData): string {
 			`<text class="name" x="16" y="${cy + 4}">${escape(l.checker)}</text>`,
 			`<rect class="track" x="${TRACK_START}" y="${cy - BAR_HEIGHT / 2}" width="${TRACK_END - TRACK_START}" height="${BAR_HEIGHT}" rx="4"/>`,
 			`<rect class="bar" x="${TRACK_START}" y="${cy - BAR_HEIGHT / 2}" width="${TRACK_END - TRACK_START}" height="${BAR_HEIGHT}" rx="4" fill="${data.colours[l.checker]}" style="transform:scaleX(${scale})"/>`,
-			`<text class="value" x="${TRACK_END + 16}" y="${cy + 4}">${l.seconds.toFixed(2)} s</text>`,
-			`<text class="value" x="${WIDTH - 16}" y="${cy + 4}" text-anchor="end">${escape(l.ratio)}</text>`,
+			...l.values.map((v, k) => `<text class="value" x="${columnX(k)}" y="${cy + 4}" text-anchor="end">${escape(v)}</text>`),
 			"</g>",
 		);
 		y += LANE_HEIGHT;
 	});
 	y += 26;
 	const height = y + (data.footnotes.length - 1) * 18 + 16;
-	const desc = data.lanes.map(l => `${l.checker} ${l.seconds.toFixed(2)} s (${l.ratio})`).join(", ");
+	const desc = data.lanes.map(l => `${l.checker}: ${l.values.map((v, k) => `${data.columns[k]} ${v}`).join(", ")}`).join("; ");
 	return [
 		`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${WIDTH} ${height}" width="${WIDTH}" height="${height}" role="img" aria-labelledby="t d">`,
 		`<title id="t">${escape(data.project)}: wall time of one full type check</title>`,

@@ -337,15 +337,16 @@ function races(run: Run): Map<string, string> {
 				const s = stat(run, p, race.phase, c, race.threads);
 				const r = stat(run, p, race.phase, ref, race.threads);
 				if (!s || !r) return [];
-				return [{ checker: c, seconds: s.median, ratio: c === ref ? "1.0×" : ratio(r.median, s.median) }];
+				const values = [`${s.median.toFixed(2)} s`, c === ref ? "1.0×" : ratio(r.median, s.median), `${s.cpu.toFixed(1)} s`, `${(s.rssMiB / 1024).toFixed(1)} GiB`];
+				return [{ checker: c, seconds: s.median, values }];
 			}).sort((a, b) => b.seconds - a.seconds);
 			if (lanes.length < 2) continue;
 			out.set(raceFile(p, race.suffix), raceSvg({
 				project: `${projectTitle(p)}, ${race.label}`,
 				subtitles: [...(size ? [size] : []), `Cold full type check in real time · ${m.machine.cpu}, ${m.machine.os} · median of ${m.iterations} runs`],
-				ratioHeading: `vs ${ref}`,
+				columns: ["wall", `vs ${ref}`, "CPU", "peak memory"],
 				lanes,
-				footnotes: [...diagnosticsLines(run, p), `"vs ${ref}": ${ref}'s median divided by the checker's. +n / −m: diagnostics only in the checker / only in ${ref}.`],
+				footnotes: [...diagnosticsLines(run, p), `Medians. "vs ${ref}": ${ref}'s wall time divided by the checker's. CPU: user + system time across all threads. Peak memory: ${m.machine.platform === "win32" ? "peak working set" : "maximum resident set size"}.`, `+n / −m: diagnostics only in the checker / only in ${ref}.`],
 				colours,
 			}));
 		}
