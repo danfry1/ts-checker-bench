@@ -33,7 +33,12 @@ h3{font-size:18px;margin:32px 0 6px}
 header{padding-top:28px}
 .top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .logo img{width:220px;height:auto;display:block;margin-left:-4px}
-.links{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:14.5px}
+.links{display:flex;flex-wrap:wrap;align-items:center;gap:6px 22px;font-size:14.5px}
+.links a{color:var(--dim)}
+.links a:hover{color:var(--fg);text-decoration:none}
+.links .gh{display:inline-flex;align-items:center;gap:8px;color:var(--fg);border:1px solid var(--line);border-radius:7px;padding:6px 12px;background:var(--soft);font-weight:500}
+.links .gh:hover{border-color:var(--dim)}
+.links .gh svg{width:16px;height:16px;fill:currentColor}
 h1{font-size:clamp(28px,5vw,44px);line-height:1.1;letter-spacing:-.025em;margin:44px 0 14px;max-width:20ch;font-weight:700}
 .lede{font-size:18px;line-height:1.5;margin:0 0 10px;color:var(--fg)}
 .scope{font-size:14.5px;color:var(--dim);margin:0}
@@ -146,9 +151,12 @@ main>section:last-child{border-bottom:0}
 .legend{display:flex;flex-wrap:wrap;gap:6px 22px;max-width:none}
 .legend b{margin-right:6px}
 .tag{font-size:11.5px;font-weight:500;color:var(--dim);margin-left:8px}
-.facts{display:grid;grid-template-columns:160px 1fr;gap:10px 20px;margin:18px 0;max-width:860px}
-.facts dt{color:var(--dim);font-size:14.5px}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 40px;margin:20px 0;max-width:920px}
+.facts>div{padding:14px 0;border-top:1px solid var(--line)}
+.facts dt{color:var(--dim);font-size:13.5px;margin-bottom:3px}
 .facts dd{margin:0}
+.facts dd b{display:block;font-weight:600;font-size:16px}
+.facts dd span{display:block;color:var(--dim);font-size:14px;margin-top:3px}
 footer{color:var(--dim);font-size:14px;padding-top:28px;padding-bottom:56px}
 @media (max-width:760px){
  .race-head,.row,.axis{grid-template-columns:1fr}
@@ -162,7 +170,7 @@ footer{color:var(--dim);font-size:14px;padding-top:28px;padding-bottom:56px}
  .js .race:not(.run) .more{opacity:0}
  .run .more{animation:show .2s linear var(--s) both}
  .ticks{grid-column:1}
- .facts{grid-template-columns:1fr;gap:2px}.facts dd{margin-bottom:10px}
+ .facts{grid-template-columns:1fr}
  .lede{font-size:17px}
  .verdicts li{grid-template-columns:1fr;gap:2px}
  .steps li{grid-template-columns:34px minmax(0,1fr);row-gap:8px}
@@ -182,7 +190,7 @@ footer{color:var(--dim);font-size:14px;padding-top:28px;padding-bottom:56px}
 <header>
 <div class="top">
 <div class="logo"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MjAgOTYiIHdpZHRoPSI1MjAiIGhlaWdodD0iOTYiIHJvbGU9ImltZyIgYXJpYS1sYWJlbGxlZGJ5PSJ0Ij4KPHRpdGxlIGlkPSJ0Ij50cy1jaGVja2VyLWJlbmNoPC90aXRsZT4KPHN0eWxlPgoubmFtZXtmb250LWZhbWlseTotYXBwbGUtc3lzdGVtLEJsaW5rTWFjU3lzdGVtRm9udCwnU2Vnb2UgVUknLEhlbHZldGljYSxBcmlhbCxzYW5zLXNlcmlmO2ZvbnQtc2l6ZTozOHB4O2ZvbnQtd2VpZ2h0OjcwMDtsZXR0ZXItc3BhY2luZzotMC41cHg7ZmlsbDojMWYyMzI4fQouZGlte2ZpbGw6IzU5NjM2ZTtmb250LXdlaWdodDo1MDB9Ci5saW5le3N0cm9rZTojMWYyMzI4fS5iYXJ7ZmlsbDojMWYyMzI4fQpAbWVkaWEgKHByZWZlcnMtY29sb3Itc2NoZW1lOmRhcmspey5uYW1le2ZpbGw6I2U2ZWRmM30uZGlte2ZpbGw6IzkxOThhMX0ubGluZXtzdHJva2U6I2U2ZWRmM30uYmFye2ZpbGw6I2U2ZWRmM319Cjwvc3R5bGU+CjxyZWN0IHg9IjgiIHk9IjIyIiB3aWR0aD0iNzYiIGhlaWdodD0iMTIiIHJ4PSIzIiBjbGFzcz0iYmFyIiBvcGFjaXR5PSIwLjM1Ii8+CjxyZWN0IHg9IjgiIHk9IjQyIiB3aWR0aD0iNDgiIGhlaWdodD0iMTIiIHJ4PSIzIiBjbGFzcz0iYmFyIiBvcGFjaXR5PSIwLjYiLz4KPHJlY3QgeD0iOCIgeT0iNjIiIHdpZHRoPSIyNiIgaGVpZ2h0PSIxMiIgcng9IjMiIGNsYXNzPSJiYXIiLz4KPGxpbmUgY2xhc3M9ImxpbmUiIHgxPSI5MiIgeTE9IjE0IiB4Mj0iOTIiIHkyPSI4MiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtZGFzaGFycmF5PSI0IDQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8dGV4dCBjbGFzcz0ibmFtZSIgeD0iMTEyIiB5PSI2MSI+dHMtY2hlY2tlci08dHNwYW4gY2xhc3M9ImRpbSI+YmVuY2g8L3RzcGFuPjwvdGV4dD4KPC9zdmc+Cg==" alt="ts-checker-bench" width="520" height="96"></div>
-<nav class="links" aria-label="Repository"><a href="https://github.com/danfry1/ts-checker-bench">Repository</a><a href="https://github.com/danfry1/ts-checker-bench/blob/main/docs/METHOD.md">Method and caveats</a><a href="https://github.com/danfry1/ts-checker-bench/blob/main/results/2026-10-19-apple-m5-darwin/report.md">Full report</a></nav>
+<nav class="links" aria-label="Repository"><a href="https://github.com/danfry1/ts-checker-bench/blob/main/docs/METHOD.md">Method</a><a href="https://github.com/danfry1/ts-checker-bench/blob/main/results/2026-10-19-apple-m5-darwin/report.md">Full report</a><a class="gh" href="https://github.com/danfry1/ts-checker-bench"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Source on GitHub</a></nav>
 </div>
 <h1>How long does a full TypeScript type check take?</h1>
 <p class="lede">5 type checkers on 3 real projects, each a fresh process with no incremental cache, on one Apple M5 in one session. Every figure links to the raw output behind it.</p>
@@ -709,13 +717,13 @@ footer{color:var(--dim);font-size:14px;padding-top:28px;padding-bottom:56px}
 </section>
 <section id="method">
 <h2>How it was measured</h2>
-<dl class="facts"><dt>Machine</dt><dd>Apple M5, 10 cores, 24 GiB, macOS 26.5.1 (25F80)</dd>
-<dt>Each measurement</dt><dd>A fresh process with no incremental cache or build info. The OS file cache is warm for every checker alike: each set of runs starts with a warm-up round.</dd>
-<dt>Rounds</dt><dd>7 timed rounds after 1 warm-up; the figure shown is the median. Checker order within each round: rotated, each round starting one place further along.</dd>
-<dt>Settings</dt><dd>Each checker's shipped defaults plus the project's own typecheck arguments. No tuning flags.</dd>
-<dt>Projects</dt><dd>Pinned to a commit, installed from their own lockfiles. A project is benchmarked only if tsgo reports 0 errors on it; rejected in this run: excalidraw.</dd>
-<dt>Conditions</dt><dd>All 570 timed runs on AC power, kept awake by caffeinate. Sleep, wake and thermal events: none. Preflight warnings: none.</dd>
-<dt>Harness</dt><dd><a href="https://github.com/danfry1/ts-checker-bench/tree/bde799c06fc93b5cc19af2cb72306efeb6f1a455"><code>bde799c06fc9</code></a> <span class="small">(added 2026-10-19: this run did not record it; the last harness commit before the run started and the parent of its results commit 11c0091, which changes no harness file)</span></dd></dl>
+<dl class="facts"><div><dt>Machine</dt><dd><b>Apple M5, 10 cores, 24 GiB</b><span>macOS 26.5.1 (25F80)</span></dd></div>
+<div><dt>Each check</dt><dd><b>A fresh process, no incremental cache</b><span>No build info or cache carries over between runs. The OS file cache is warm for every checker alike: each set of runs starts with a warm-up round.</span></dd></div>
+<div><dt>Sample</dt><dd><b>Median of 7 timed rounds</b><span>After one warm-up round. Checker order rotated each round, so every checker ran in every position.</span></dd></div>
+<div><dt>Settings</dt><dd><b>Shipped defaults, no tuning flags</b><span>Each checker as it ships, with only the project's own typecheck arguments.</span></dd></div>
+<div><dt>Projects</dt><dd><b>Pinned commits, their own lockfiles</b><span>Benchmarked only if tsgo reports 0 errors; rejected in this run: excalidraw.</span></dd></div>
+<div><dt>Conditions</dt><dd><b>All 570 runs on AC power</b><span>Kept awake by caffeinate, no sleep, wake or thermal events, no preflight warnings.</span></dd></div>
+<div><dt>Harness</dt><dd><b><a href="https://github.com/danfry1/ts-checker-bench/tree/bde799c06fc93b5cc19af2cb72306efeb6f1a455"><code>bde799c06fc9</code></a></b><span><span title="added 2026-10-19: this run did not record it; the last harness commit before the run started and the parent of its results commit 11c0091, which changes no harness file">Recorded after the run: the last harness commit before it started (details in run.json).</span></span></dd></div></dl>
 <p>Caveats, and what the numbers do not show, in <a href="https://github.com/danfry1/ts-checker-bench/blob/main/docs/METHOD.md">docs/METHOD.md</a>. Every file behind this page is in <a href="https://github.com/danfry1/ts-checker-bench/tree/main/results/2026-10-19-apple-m5-darwin">results/2026-10-19-apple-m5-darwin/</a>, with its <a href="https://github.com/danfry1/ts-checker-bench/blob/main/results/2026-10-19-apple-m5-darwin/report.md">full report</a>.</p>
 </section>
 <section id="reproduce">

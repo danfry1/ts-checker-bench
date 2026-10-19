@@ -337,18 +337,21 @@ function methodSection(run: Run): string {
 	const ac = run.rows.every(r => r.power === "AC");
 	const events = m.osEvents ? m.osEvents.events.length : null;
 	const rejected = m.projects.filter(p => gateOutcome(p.gate) !== "passed").map(p => p.name);
-	const facts: [string, string][] = [
-		["Machine", `${esc(m.machine.cpu)}, ${m.machine.cpus} cores, ${m.machine.memoryGiB} GiB, ${esc(m.machine.os)}`],
-		["Each measurement", "A fresh process with no incremental cache or build info. The OS file cache is warm for every checker alike: each set of runs starts with a warm-up round."],
-		["Rounds", `${m.iterations} timed rounds after 1 warm-up; the figure shown is the median. Checker order within each round: ${m.roundOrder === "rotating" ? "rotated, each round starting one place further along" : "fixed"}.`],
-		["Settings", "Each checker's shipped defaults plus the project's own typecheck arguments. No tuning flags."],
-		["Projects", `Pinned to a commit, installed from their own lockfiles. A project is benchmarked only if ${esc(ref)} reports 0 errors on it${rejected.length ? `; rejected in this run: ${esc(rejected.join(", "))}` : ""}.`],
-		["Conditions", `${ac ? `All ${run.rows.length} timed runs on AC power` : "Some runs not on AC power"}, kept awake by ${esc(m.keptAwakeBy ?? "nothing")}. Sleep, wake and thermal events: ${events === null ? "not recorded" : events === 0 ? "none" : events}. Preflight warnings: ${m.preflight.warnings.length ? esc(m.preflight.warnings.join("; ")) : "none"}.`],
-		...(m.harness ? [["Harness", `<a href="${REPO}/tree/${m.harness.commit}"><code>${m.harness.commit.slice(0, 12)}</code></a>${m.harness.source ? ` <span class="small">(${esc(m.harness.source)})</span>` : ""}`] as [string, string]] : []),
+	const events$ = events === null ? "sleep, wake and thermal events not recorded" : events === 0 ? "no sleep, wake or thermal events" : `${events} sleep, wake or thermal events`;
+	const warnings = m.preflight.warnings.length ? `preflight warnings: ${esc(m.preflight.warnings.join("; "))}` : "no preflight warnings";
+	// Each fact: a label, the fact itself in a few words, and the detail behind it.
+	const facts: [string, string, string][] = [
+		["Machine", `${esc(m.machine.cpu)}, ${m.machine.cpus} cores, ${m.machine.memoryGiB} GiB`, esc(m.machine.os)],
+		["Each check", "A fresh process, no incremental cache", "No build info or cache carries over between runs. The OS file cache is warm for every checker alike: each set of runs starts with a warm-up round."],
+		["Sample", `Median of ${m.iterations} timed rounds`, `After one warm-up round. Checker order ${m.roundOrder === "rotating" ? "rotated each round, so every checker ran in every position" : "fixed, the same every round"}.`],
+		["Settings", "Shipped defaults, no tuning flags", "Each checker as it ships, with only the project's own typecheck arguments."],
+		["Projects", "Pinned commits, their own lockfiles", `Benchmarked only if ${esc(ref)} reports 0 errors${rejected.length ? `; rejected in this run: ${esc(rejected.join(", "))}` : ""}.`],
+		["Conditions", ac ? `All ${run.rows.length} runs on AC power` : "Some runs not on AC power", `Kept awake by ${esc(m.keptAwakeBy ?? "nothing")}, ${events$}, ${warnings}.`],
+		...(m.harness ? [["Harness", `<a href="${REPO}/tree/${m.harness.commit}"><code>${m.harness.commit.slice(0, 12)}</code></a>`, m.harness.source ? `<span title="${esc(m.harness.source)}">Recorded after the run: the last harness commit before it started (details in run.json).</span>` : "Recorded by the run."] as [string, string, string]] : []),
 	];
 	return `<section id="method">
 <h2>How it was measured</h2>
-<dl class="facts">${facts.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("\n")}</dl>
+<dl class="facts">${facts.map(([k, v, d]) => `<div><dt>${k}</dt><dd><b>${v}</b><span>${d}</span></dd></div>`).join("\n")}</dl>
 <p>Caveats, and what the numbers do not show, in <a href="${blob("docs/METHOD.md")}">docs/METHOD.md</a>. Every file behind this page is in <a href="${tree(`results/${run.name}`)}">results/${run.name}/</a>, with its <a href="${blob(`results/${run.name}/report.md`)}">full report</a>.</p>
 </section>`;
 }
@@ -363,6 +366,9 @@ const STEPS: [string, string, string][] = [
 	["Run the benchmark", "About 40 minutes on a 10-core Mac, longer on slower ones. Writes results/<date>-<cpu>-<os>/ with its report.", "node bench run"],
 	["Send it", "Check the run as CI will, then open a pull request with its results/ folder. Runs from other machines are welcome.", "node bench verify <date>-<cpu>-<os>"],
 ];
+
+/** GitHub's mark, for the link to the repository. */
+const GITHUB_MARK = `<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>`;
 
 const FAVICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect x="3" y="6" width="26" height="5" rx="2" fill="#8a8f98"/><rect x="3" y="14" width="16" height="5" rx="2" fill="#3178c6"/><rect x="3" y="22" width="9" height="5" rx="2" fill="#19a979"/></svg>`;
 
@@ -383,7 +389,12 @@ h3{font-size:18px;margin:32px 0 6px}
 header{padding-top:28px}
 .top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .logo img{width:220px;height:auto;display:block;margin-left:-4px}
-.links{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:14.5px}
+.links{display:flex;flex-wrap:wrap;align-items:center;gap:6px 22px;font-size:14.5px}
+.links a{color:var(--dim)}
+.links a:hover{color:var(--fg);text-decoration:none}
+.links .gh{display:inline-flex;align-items:center;gap:8px;color:var(--fg);border:1px solid var(--line);border-radius:7px;padding:6px 12px;background:var(--soft);font-weight:500}
+.links .gh:hover{border-color:var(--dim)}
+.links .gh svg{width:16px;height:16px;fill:currentColor}
 h1{font-size:clamp(28px,5vw,44px);line-height:1.1;letter-spacing:-.025em;margin:44px 0 14px;max-width:20ch;font-weight:700}
 .lede{font-size:18px;line-height:1.5;margin:0 0 10px;color:var(--fg)}
 .scope{font-size:14.5px;color:var(--dim);margin:0}
@@ -496,9 +507,12 @@ main>section:last-child{border-bottom:0}
 .legend{display:flex;flex-wrap:wrap;gap:6px 22px;max-width:none}
 .legend b{margin-right:6px}
 .tag{font-size:11.5px;font-weight:500;color:var(--dim);margin-left:8px}
-.facts{display:grid;grid-template-columns:160px 1fr;gap:10px 20px;margin:18px 0;max-width:860px}
-.facts dt{color:var(--dim);font-size:14.5px}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 40px;margin:20px 0;max-width:920px}
+.facts>div{padding:14px 0;border-top:1px solid var(--line)}
+.facts dt{color:var(--dim);font-size:13.5px;margin-bottom:3px}
 .facts dd{margin:0}
+.facts dd b{display:block;font-weight:600;font-size:16px}
+.facts dd span{display:block;color:var(--dim);font-size:14px;margin-top:3px}
 footer{color:var(--dim);font-size:14px;padding-top:28px;padding-bottom:56px}
 @media (max-width:760px){
  .race-head,.row,.axis{grid-template-columns:1fr}
@@ -512,7 +526,7 @@ footer{color:var(--dim);font-size:14px;padding-top:28px;padding-bottom:56px}
  .js .race:not(.run) .more{opacity:0}
  .run .more{animation:show .2s linear var(--s) both}
  .ticks{grid-column:1}
- .facts{grid-template-columns:1fr;gap:2px}.facts dd{margin-bottom:10px}
+ .facts{grid-template-columns:1fr}
  .lede{font-size:17px}
  .verdicts li{grid-template-columns:1fr;gap:2px}
  .steps li{grid-template-columns:34px minmax(0,1fr);row-gap:8px}
@@ -654,7 +668,7 @@ export function siteHtml(run: Run): string {
 <header>
 <div class="top">
 <div class="logo">${logo}</div>
-<nav class="links" aria-label="Repository"><a href="${REPO}">Repository</a><a href="${blob("docs/METHOD.md")}">Method and caveats</a><a href="${blob(`results/${run.name}/report.md`)}">Full report</a></nav>
+<nav class="links" aria-label="Repository"><a href="${blob("docs/METHOD.md")}">Method</a><a href="${blob(`results/${run.name}/report.md`)}">Full report</a><a class="gh" href="${REPO}">${GITHUB_MARK}Source on GitHub</a></nav>
 </div>
 <h1>How long does a full TypeScript type check take?</h1>
 <p class="lede">${checkers.length} type checkers on ${projects.length} real projects, each a fresh process with no incremental cache, on one ${esc(m.machine.cpu)} in one session. Every figure links to the raw output behind it.</p>
