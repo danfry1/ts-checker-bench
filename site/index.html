@@ -98,7 +98,6 @@ main>section:last-child{border-bottom:0}
 .dtable{border-collapse:separate;border-spacing:var(--gap);margin-left:calc(-1*var(--gap));table-layout:fixed;width:calc(var(--lw) + var(--n)*var(--tw) + (var(--n) + 2)*var(--gap))}
 .dtable .lc{width:var(--lw)}.dtable .tc{width:var(--tw)}
 .dtable.head{margin-bottom:-2px}
-.dcheck .summary{margin:2px 0 20px calc(var(--lw) + var(--gap))}
 .sublabel .short{display:none}
 .dtable thead th{font-weight:600;font-size:14px;text-align:center;padding:0 2px}
 .dtable .states th{font-weight:500;font-size:12.5px;color:var(--dim);padding:2px 2px 8px;white-space:nowrap}
@@ -108,8 +107,18 @@ main>section:last-child{border-bottom:0}
 .tile{height:34px;text-align:center;border-radius:5px;background:var(--soft);font-weight:600;font-size:14px;white-space:nowrap}
 .tile.ok{background:color-mix(in srgb,var(--ok) 15%,transparent);color:var(--ok)}
 .tile.diff{background:color-mix(in srgb,var(--warn) 15%,transparent);color:var(--warn)}
-.summary{font-size:14px;color:var(--dim);max-width:64ch}
-.summary code{color:var(--fg)}
+.verdicts{list-style:none;padding:0;margin:20px 0 8px;display:grid;gap:0}
+.verdicts li{display:grid;grid-template-columns:110px 1fr;gap:16px;padding:16px 0;border-top:1px solid var(--line)}
+.verdicts li:last-child{border-bottom:1px solid var(--line)}
+.verdicts .who{font-weight:600;font-size:17px;padding-top:1px}
+.verdict{font-weight:600;font-size:17px}
+.verdict.ok{color:var(--ok)}.verdict.port{color:var(--fg)}.verdict.diff{color:var(--warn)}
+.verdicts p{margin:4px 0 0;color:var(--dim);font-size:15px;max-width:68ch}
+.verdicts code{color:var(--fg)}
+.detail{margin:14px 0 6px}
+.detail summary{cursor:pointer;color:var(--link);font-size:15px;width:max-content}
+.dtable tbody+tbody{margin-top:0}
+.dgrid .dtable{margin-top:6px}
 .legend{display:flex;flex-wrap:wrap;gap:6px 22px;max-width:none}
 .legend b{margin-right:6px}
 .tag{font-size:11.5px;font-weight:500;color:var(--dim);margin-left:8px}
@@ -131,12 +140,12 @@ footer{color:var(--dim);font-size:14px;padding-top:28px;padding-bottom:56px}
  .ticks{grid-column:1}
  .facts{grid-template-columns:1fr;gap:2px}.facts dd{margin-bottom:10px}
  .lede{font-size:17px}
+ .verdicts li{grid-template-columns:1fr;gap:2px}
  .dgrid{--lw:66px;--tw:calc((100vw - 40px - var(--lw) - (var(--n) + 2)*var(--gap)) / var(--n));--gap:3px}
  .tile{height:30px;font-size:12.5px}
  .dtable tbody th{font-size:14px;padding-right:4px}
  .dtable .states th{font-size:11.5px}.dtable .states th span{font-size:10.5px}
  .sublabel .long{display:none}.sublabel .short{display:inline}
- .dcheck .summary{margin-left:0}
  .nav .label,.nav .hint{display:none}
  .seg button{padding:6px 11px}
 }
@@ -628,43 +637,38 @@ footer{color:var(--dim);font-size:14px;padding-top:28px;padding-bottom:56px}
 </section>
 <section id="diagnostics">
 <h2>Do they report the same errors?</h2>
-<p>Every checker ran each project twice clean and twice with <a href="https://github.com/danfry1/ts-checker-bench/tree/main/fixtures/patches">a patch of planted type errors</a>. Its output is compared with tsgo's byte for byte, and after normalising to one <code>path:line:col code message</code> line per error. Checkers that port a different TypeScript build are also compared with that build's own output, in a second row.</p>
-<div class="dgrid" style="--n:6" id="diagnostics-compared-with-each-checkers-upstream-build">
+<p>Each checker ran every project clean and with <a href="https://github.com/danfry1/ts-checker-bench/tree/main/fixtures/patches">a few planted type errors</a>, and its output was compared with tsgo's.</p>
+<ul class="verdicts"><li><span class="who">tsc-ts</span><div><span class="verdict ok">Identical to tsgo</span><p>Byte-for-byte the same output as tsgo on all 3 projects, clean and with planted errors.</p></div></li>
+<li><span class="who">tsc-rs</span><div><span class="verdict port">Same as the TypeScript build it ports</span><p>Reports errors tsgo 7.0.2 does not: 10 on VS Code and 1 on Outline. One message prints a type differently on type-fest. Upstream tsgo built from the TypeScript commit it ports, <code>typescript@7.1.0-dev.20261008.1</code>, prints exactly the same output on every project, so these differences come from that TypeScript version, not from tsc-rs.</p></div></li>
+<li><span class="who">tsrs</span><div><span class="verdict port">Same as the TypeScript build it ports</span><p>Reports errors tsgo 7.0.2 does not: 10 on VS Code and 1 on Outline. One message prints a type differently on type-fest. Upstream tsgo built from the TypeScript commit it ports, <code>typescript@7.1.0-dev.20260930.4</code>, prints exactly the same output on every project, so these differences come from that TypeScript version, not from tsrs.</p></div></li>
+<li><span class="who">bun</span><div><span class="verdict ok">Same errors as tsgo</span><p>Prints tsgo's error lines word for word on all 3 projects, and adds its own summary of the check.</p></div></li></ul>
+<details class="detail" id="diagnostics-compared-with-each-checkers-upstream-build">
+<summary>Per project and state</summary>
+<div class="dgrid" style="--n:6">
 <table class="dtable head"><colgroup><col class="lc"><col class="tc"><col class="tc"><col class="tc"><col class="tc"><col class="tc"><col class="tc"></colgroup><thead>
 <tr><th></th><th colspan="2" scope="colgroup">VS Code</th><th colspan="2" scope="colgroup">Outline</th><th colspan="2" scope="colgroup">type-fest</th></tr>
 <tr class="states"><th></th><th scope="col">clean<span>0 errors</span></th><th scope="col">planted<span>3 errors</span></th><th scope="col">clean<span>0 errors</span></th><th scope="col">planted<span>3 errors</span></th><th scope="col">clean<span>0 errors</span></th><th scope="col">planted<span>6 errors</span></th></tr>
 </thead></table>
-<div class="dcheck">
 <table class="dtable"><colgroup><col class="lc"><col class="tc"><col class="tc"><col class="tc"><col class="tc"><col class="tc"><col class="tc"></colgroup><tbody>
 <tr><th scope="row">tsc-ts</th><td class="tile ok" title="byte-identical">✓</td><td class="tile ok" title="byte-identical">✓</td><td class="tile ok" title="byte-identical">✓</td><td class="tile ok" title="byte-identical">✓</td><td class="tile ok" title="byte-identical">✓</td><td class="tile ok" title="byte-identical">✓</td></tr>
 
 </tbody></table>
-<p class="summary">Byte-identical to tsgo on every project, clean and with planted errors.</p>
-</div>
-<div class="dcheck">
 <table class="dtable"><colgroup><col class="lc"><col class="tc"><col class="tc"><col class="tc"><col class="tc"><col class="tc"><col class="tc"></colgroup><tbody>
 <tr><th scope="row">tsc-rs</th><td class="tile diff" title="10 only in tsc-rs, 0 only in tsgo">+10</td><td class="tile diff" title="10 only in tsc-rs, 0 only in tsgo">+10</td><td class="tile diff" title="1 only in tsc-rs, 0 only in tsgo">+1</td><td class="tile diff" title="1 only in tsc-rs, 0 only in tsgo">+1</td><td class="tile ok" title="byte-identical">✓</td><td class="tile diff" title="1 only in tsc-rs, 1 only in tsgo">+1 −1</td></tr>
 <tr><th scope="row" class="sublabel"><span class="long">its upstream build</span><span class="short">upstream</span></th><td class="tile ok" title="byte-identical to tsgo-7.1-dev-20261008">✓</td><td class="tile ok" title="byte-identical to tsgo-7.1-dev-20261008">✓</td><td class="tile ok" title="byte-identical to tsgo-7.1-dev-20261008">✓</td><td class="tile ok" title="byte-identical to tsgo-7.1-dev-20261008">✓</td><td class="tile ok" title="byte-identical to tsgo-7.1-dev-20261008">✓</td><td class="tile ok" title="byte-identical to tsgo-7.1-dev-20261008">✓</td></tr>
 </tbody></table>
-<p class="summary">Differs from tsgo on VS Code (10 extra), Outline (1 extra), type-fest (1 extra, 1 missing). Byte-identical to <code>typescript@7.1.0-dev.20261008.1</code>, the TypeScript build it ports, everywhere: the differences come from that build, not the port.</p>
-</div>
-<div class="dcheck">
 <table class="dtable"><colgroup><col class="lc"><col class="tc"><col class="tc"><col class="tc"><col class="tc"><col class="tc"><col class="tc"></colgroup><tbody>
 <tr><th scope="row">tsrs</th><td class="tile diff" title="10 only in tsrs, 0 only in tsgo">+10</td><td class="tile diff" title="10 only in tsrs, 0 only in tsgo">+10</td><td class="tile diff" title="1 only in tsrs, 0 only in tsgo">+1</td><td class="tile diff" title="1 only in tsrs, 0 only in tsgo">+1</td><td class="tile ok" title="byte-identical">✓</td><td class="tile diff" title="1 only in tsrs, 1 only in tsgo">+1 −1</td></tr>
 <tr><th scope="row" class="sublabel"><span class="long">its upstream build</span><span class="short">upstream</span></th><td class="tile ok" title="byte-identical to tsgo-7.1-dev">✓</td><td class="tile ok" title="byte-identical to tsgo-7.1-dev">✓</td><td class="tile ok" title="byte-identical to tsgo-7.1-dev">✓</td><td class="tile ok" title="byte-identical to tsgo-7.1-dev">✓</td><td class="tile ok" title="byte-identical to tsgo-7.1-dev">✓</td><td class="tile ok" title="byte-identical to tsgo-7.1-dev">✓</td></tr>
 </tbody></table>
-<p class="summary">Differs from tsgo on VS Code (10 extra), Outline (1 extra), type-fest (1 extra, 1 missing). Byte-identical to <code>typescript@7.1.0-dev.20260930.4</code>, the TypeScript build it ports, everywhere: the differences come from that build, not the port.</p>
-</div>
-<div class="dcheck">
 <table class="dtable"><colgroup><col class="lc"><col class="tc"><col class="tc"><col class="tc"><col class="tc"><col class="tc"><col class="tc"></colgroup><tbody>
-<tr><th scope="row">bun</th><td class="tile near" title="same after normalising">≈</td><td class="tile near" title="same after normalising">≈</td><td class="tile near" title="same after normalising">≈</td><td class="tile near" title="same after normalising">≈</td><td class="tile near" title="same after normalising">≈</td><td class="tile near" title="same after normalising">≈</td></tr>
+<tr><th scope="row">bun</th><td class="tile near" title="same errors after normalising">≈</td><td class="tile near" title="same errors after normalising">≈</td><td class="tile near" title="same errors after normalising">≈</td><td class="tile near" title="same errors after normalising">≈</td><td class="tile near" title="same errors after normalising">≈</td><td class="tile near" title="same errors after normalising">≈</td></tr>
 
 </tbody></table>
-<p class="summary">The same errors as tsgo at the same places with the same top-level messages; its output differs only once normalised.</p>
 </div>
-</div>
-<p class="legend small"><span><b class="ok">✓</b> byte-identical</span><span><b>≈</b> same errors, places and top-level messages after normalising</span><span><b class="diff">+n −m</b> errors only in the checker, only in tsgo</span><span>The counts under each column are tsgo's errors.</span></p>
-<p class="small"><a href="https://github.com/danfry1/ts-checker-bench/blob/main/results/2026-10-19-apple-m5-darwin/report.md#differences-verbatim-normalised-form">Every difference, verbatim</a>, and <a href="https://github.com/danfry1/ts-checker-bench/blob/main/results/2026-10-19-apple-m5-darwin/report.md#diagnostics">the full tables</a> in the run's report.</p>
+<p class="legend small"><span><b class="ok">✓</b> byte-identical to tsgo</span><span><b>≈</b> same errors, places and top-level messages after normalising each output to one <code>path:line:col code message</code> line per error</span><span><b class="diff">+n −m</b> lines only in the checker, only in tsgo</span><span>The counts under each column are tsgo's errors. Ports get a second row against their upstream build.</span></p>
+<p class="small"><a href="https://github.com/danfry1/ts-checker-bench/blob/main/results/2026-10-19-apple-m5-darwin/report.md#differences-verbatim-normalised-form">Every difference, verbatim</a>, and <a href="https://github.com/danfry1/ts-checker-bench/blob/main/results/2026-10-19-apple-m5-darwin/report.md#diagnostics">the full tables</a>, in the run's report.</p>
+</details>
 </section>
 <section id="checkers">
 <h2>Checkers</h2>

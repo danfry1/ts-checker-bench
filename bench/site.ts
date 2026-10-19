@@ -156,18 +156,39 @@ ${ss.map((s, i) => race(run, p, s, i !== 0)).join("\n")}
 </section>`;
 }
 
+/** Extra and missing diagnostics, with pairs at the same place and code counted as one changed message. */
+function differences(extra: string[], missing: string[]) {
+	const key = (line: string) => line.split(" ").slice(0, 2).join(" ");
+	const missingKeys = missing.map(key);
+	const changed = extra.filter(l => missingKeys.includes(key(l))).length;
+	return { extra: extra.length - changed, missing: missing.length - changed, changed };
+}
+
+/** Whether every line of a's output appears in b's, in order: b prints a's lines and adds its own. */
+function keepsLines(a: string | null, b: string | null): boolean {
+	if (a === null || b === null) return false;
+	const want = a.split(/\r?\n/).filter(Boolean);
+	let i = 0;
+	for (const line of b.split(/\r?\n/)) if (i < want.length && line === want[i]) i++;
+	return i === want.length;
+}
+
 function diagnosticsSection(run: Run): string {
 	const ref = referenceName(run);
+	const refVersion = run.meta.checkers.find(c => c.name === ref)?.package.split("@").pop() ?? "";
 	const projects = bySize(run);
 	const states = ["clean", "broken"];
 	const results = new Map(projects.map(p => [p, parity(run, p)]));
 	const find = (p: string, s: string, c: string) => results.get(p)!.find(r => r.state === s && r.checker === c);
-	// One tile per project and state: ✓ byte-identical, ≈ the same after normalising, or the counts that differ.
+	const list = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}` : xs.join(""));
+	const count = (n: number, one: string, many: string) => `${n === 1 ? "one" : n} ${n === 1 ? one : many}`;
+
+	// One tile per project and state, for the detail grid.
 	const tile = (p: string, s: string, c: string) => {
 		const r = find(p, s, c);
 		if (!r) return `<td class="tile">–</td>`;
 		if (r.raw) return `<td class="tile ok" title="byte-identical">✓</td>`;
-		if (r.normalized) return `<td class="tile near" title="same after normalising">≈</td>`;
+		if (r.normalized) return `<td class="tile near" title="same errors after normalising">≈</td>`;
 		return `<td class="tile diff" title="${r.extra.length} only in ${esc(c)}, ${r.missing.length} only in ${esc(ref)}">+${r.extra.length}${r.missing.length ? ` −${r.missing.length}` : ""}</td>`;
 	};
 	const upstreamTile = (p: string, s: string, c: string, b: string) => {
@@ -175,50 +196,72 @@ function diagnosticsSection(run: Run): string {
 		return same === undefined ? `<td class="tile">–</td>` : same ? `<td class="tile ok" title="byte-identical to ${esc(b)}">✓</td>` : `<td class="tile diff" title="differs from ${esc(b)}">≠</td>`;
 	};
 	const cols = projects.length * states.length;
-	// Fixed columns, so the header and every checker's table line up.
-	const colgroup = `<colgroup><col class="lc">${"<col class=\"tc\">".repeat(cols)}</colgroup>`;
+	const colgroup = `<colgroup><col class="lc">${'<col class="tc">'.repeat(cols)}</colgroup>`;
 	const errorsLabel = (n?: number) => (n === undefined ? "–" : `${n} ${n === 1 ? "error" : "errors"}`);
-	const rows = timedNames(run)
-		.filter(c => c !== ref)
-		.map(c => {
-			const all = projects.flatMap(p => states.flatMap(s => find(p, s, c) ?? []));
-			const build = ownBuild(run, c);
-			const pkg = build ? (run.meta.checkers.find(x => x.name === build)?.package ?? build) : "";
-			const upstreamSame = build !== undefined && projects.every(p => states.every(s => sameOutput(run, p, s, c, build) === true));
-			const differs = projects.flatMap(p => {
-				const rs = states.flatMap(s => find(p, s, c) ?? []).filter(r => !r.normalized);
-				if (!rs.length) return [];
-				const extra = Math.max(...rs.map(r => r.extra.length));
-				const missing = Math.max(...rs.map(r => r.missing.length));
-				return [`${projectTitle(p)} (${extra ? `${extra} extra` : ""}${extra && missing ? ", " : ""}${missing ? `${missing} missing` : ""})`];
+
+	const verdicts: string[] = [];
+	const gridRows: string[] = [];
+	for (const c of timedNames(run).filter(c => c !== ref)) {
+		const all = projects.flatMap(p => states.flatMap(s => find(p, s, c) ?? []));
+		const build = ownBuild(run, c);
+		const pkg = build ? (run.meta.checkers.find(x => x.name === build)?.package ?? build) : "";
+		const upstreamSame = build !== undefined && projects.every(p => states.every(s => sameOutput(run, p, s, c, build) === true));
+		let title: string;
+		let text: string;
+		let tone: string;
+		if (all.every(r => r.raw)) {
+			title = `Identical to ${esc(ref)}`;
+			tone = "ok";
+			text = `Byte-for-byte the same output as ${esc(ref)} on all ${projects.length} projects, clean and with planted errors.`;
+		} else if (all.every(r => r.normalized)) {
+			title = `Same errors as ${esc(ref)}`;
+			tone = "ok";
+			const kept = projects.every(p => states.every(s => keepsLines(run.read("parity", p, `${s}.${ref}.txt`), run.read("parity", p, `${s}.${c}.txt`))));
+			text = kept
+				? `Prints ${esc(ref)}'s error lines word for word on all ${projects.length} projects, and adds its own summary of the check.`
+				: `The same errors at the same places with the same messages as ${esc(ref)} on all ${projects.length} projects; its output is laid out differently.`;
+		} else {
+			// Per project, the largest difference in either state.
+			const parts = projects.flatMap(p => {
+				const ds = states.flatMap(s => find(p, s, c) ?? []).filter(r => !r.normalized).map(r => differences(r.extra, r.missing));
+				if (!ds.length) return [];
+				return [{ p: projectTitle(p), extra: Math.max(...ds.map(d => d.extra)), missing: Math.max(...ds.map(d => d.missing)), changed: Math.max(...ds.map(d => d.changed)) }];
 			});
-			const summary = all.every(r => r.raw)
-				? `Byte-identical to ${esc(ref)} on every project, clean and with planted errors.`
-				: all.every(r => r.normalized)
-					? `The same errors as ${esc(ref)} at the same places with the same top-level messages; its output differs only once normalised.`
-					: `Differs from ${esc(ref)} on ${esc(differs.join(", "))}.${upstreamSame ? ` Byte-identical to <code>${esc(pkg)}</code>, the TypeScript build it ports, everywhere: the differences come from that build, not the port.` : ""}`;
-			const upstream = build ? `<tr><th scope="row" class="sublabel"><span class="long">its upstream build</span><span class="short">upstream</span></th>${projects.flatMap(p => states.map(s => upstreamTile(p, s, c, build))).join("")}</tr>` : "";
-			return `<div class="dcheck">
-<table class="dtable">${colgroup}<tbody>
+			const extra = parts.filter(x => x.extra).map(x => `${x.extra} on ${x.p}`);
+			const missing = parts.filter(x => x.missing).map(x => `${x.missing} on ${x.p}`);
+			const changed = parts.filter(x => x.changed).map(x => `${count(x.changed, "message prints a type differently", "messages print types differently")} on ${x.p}`);
+			text = [
+				...(extra.length ? [`Reports errors ${esc(ref)} ${refVersion} does not: ${list(extra)}.`] : []),
+				...(missing.length ? [`Misses errors ${esc(ref)} ${refVersion} reports: ${list(missing)}.`] : []),
+				...(changed.length ? [`${list(changed).replace(/^./, x => x.toUpperCase())}.`] : []),
+				...(upstreamSame ? [`Upstream tsgo built from the TypeScript commit it ports, <code>${esc(pkg)}</code>, prints exactly the same output on every project, so these differences come from that TypeScript version, not from ${esc(c)}.`] : []),
+			].join(" ");
+			title = upstreamSame ? "Same as the TypeScript build it ports" : `Differs from ${esc(ref)}`;
+			tone = upstreamSame ? "port" : "diff";
+		}
+		verdicts.push(`<li><span class="who">${esc(c)}</span><div><span class="verdict ${tone}">${title}</span><p>${text}</p></div></li>`);
+		const upstream = build ? `<tr><th scope="row" class="sublabel"><span class="long">its upstream build</span><span class="short">upstream</span></th>${projects.flatMap(p => states.map(s => upstreamTile(p, s, c, build))).join("")}</tr>` : "";
+		gridRows.push(`<table class="dtable">${colgroup}<tbody>
 <tr><th scope="row">${esc(c)}</th>${projects.flatMap(p => states.map(s => tile(p, s, c))).join("")}</tr>
 ${upstream}
-</tbody></table>
-<p class="summary">${summary}</p>
-</div>`;
-		})
-		.join("\n");
+</tbody></table>`);
+	}
 	return `<section id="diagnostics">
 <h2>Do they report the same errors?</h2>
-<p>Every checker ran each project twice clean and twice with <a href="${tree("fixtures/patches")}">a patch of planted type errors</a>. Its output is compared with ${esc(ref)}'s byte for byte, and after normalising to one <code>path:line:col code message</code> line per error.${timedNames(run).some(c => ownBuild(run, c)) ? " Checkers that port a different TypeScript build are also compared with that build's own output, in a second row." : ""}</p>
-<div class="dgrid" style="--n:${cols}" id="diagnostics-compared-with-each-checkers-upstream-build">
+<p>Each checker ran every project clean and with <a href="${tree("fixtures/patches")}">a few planted type errors</a>, and its output was compared with ${esc(ref)}'s.</p>
+<ul class="verdicts">${verdicts.join("\n")}</ul>
+<details class="detail" id="diagnostics-compared-with-each-checkers-upstream-build">
+<summary>Per project and state</summary>
+<div class="dgrid" style="--n:${cols}">
 <table class="dtable head">${colgroup}<thead>
 <tr><th></th>${projects.map(p => `<th colspan="${states.length}" scope="colgroup">${esc(projectTitle(p))}</th>`).join("")}</tr>
 <tr class="states"><th></th>${projects.flatMap(p => states.map(s => `<th scope="col">${s === "clean" ? "clean" : "planted"}<span>${errorsLabel(find(p, s, ref)?.errors)}</span></th>`)).join("")}</tr>
 </thead></table>
-${rows}
+${gridRows.join("\n")}
 </div>
-<p class="legend small"><span><b class="ok">✓</b> byte-identical</span><span><b>≈</b> same errors, places and top-level messages after normalising</span><span><b class="diff">+n −m</b> errors only in the checker, only in ${esc(ref)}</span><span>The counts under each column are ${esc(ref)}'s errors.</span></p>
-<p class="small"><a href="${blob(`results/${run.name}/report.md`)}#differences-verbatim-normalised-form">Every difference, verbatim</a>, and <a href="${blob(`results/${run.name}/report.md`)}#diagnostics">the full tables</a> in the run's report.</p>
+<p class="legend small"><span><b class="ok">✓</b> byte-identical to ${esc(ref)}</span><span><b>≈</b> same errors, places and top-level messages after normalising each output to one <code>path:line:col code message</code> line per error</span><span><b class="diff">+n −m</b> lines only in the checker, only in ${esc(ref)}</span><span>The counts under each column are ${esc(ref)}'s errors. Ports get a second row against their upstream build.</span></p>
+<p class="small"><a href="${blob(`results/${run.name}/report.md`)}#differences-verbatim-normalised-form">Every difference, verbatim</a>, and <a href="${blob(`results/${run.name}/report.md`)}#diagnostics">the full tables</a>, in the run's report.</p>
+</details>
 </section>`;
 }
 
@@ -355,7 +398,6 @@ main>section:last-child{border-bottom:0}
 .dtable{border-collapse:separate;border-spacing:var(--gap);margin-left:calc(-1*var(--gap));table-layout:fixed;width:calc(var(--lw) + var(--n)*var(--tw) + (var(--n) + 2)*var(--gap))}
 .dtable .lc{width:var(--lw)}.dtable .tc{width:var(--tw)}
 .dtable.head{margin-bottom:-2px}
-.dcheck .summary{margin:2px 0 20px calc(var(--lw) + var(--gap))}
 .sublabel .short{display:none}
 .dtable thead th{font-weight:600;font-size:14px;text-align:center;padding:0 2px}
 .dtable .states th{font-weight:500;font-size:12.5px;color:var(--dim);padding:2px 2px 8px;white-space:nowrap}
@@ -365,8 +407,18 @@ main>section:last-child{border-bottom:0}
 .tile{height:34px;text-align:center;border-radius:5px;background:var(--soft);font-weight:600;font-size:14px;white-space:nowrap}
 .tile.ok{background:color-mix(in srgb,var(--ok) 15%,transparent);color:var(--ok)}
 .tile.diff{background:color-mix(in srgb,var(--warn) 15%,transparent);color:var(--warn)}
-.summary{font-size:14px;color:var(--dim);max-width:64ch}
-.summary code{color:var(--fg)}
+.verdicts{list-style:none;padding:0;margin:20px 0 8px;display:grid;gap:0}
+.verdicts li{display:grid;grid-template-columns:110px 1fr;gap:16px;padding:16px 0;border-top:1px solid var(--line)}
+.verdicts li:last-child{border-bottom:1px solid var(--line)}
+.verdicts .who{font-weight:600;font-size:17px;padding-top:1px}
+.verdict{font-weight:600;font-size:17px}
+.verdict.ok{color:var(--ok)}.verdict.port{color:var(--fg)}.verdict.diff{color:var(--warn)}
+.verdicts p{margin:4px 0 0;color:var(--dim);font-size:15px;max-width:68ch}
+.verdicts code{color:var(--fg)}
+.detail{margin:14px 0 6px}
+.detail summary{cursor:pointer;color:var(--link);font-size:15px;width:max-content}
+.dtable tbody+tbody{margin-top:0}
+.dgrid .dtable{margin-top:6px}
 .legend{display:flex;flex-wrap:wrap;gap:6px 22px;max-width:none}
 .legend b{margin-right:6px}
 .tag{font-size:11.5px;font-weight:500;color:var(--dim);margin-left:8px}
@@ -388,12 +440,12 @@ footer{color:var(--dim);font-size:14px;padding-top:28px;padding-bottom:56px}
  .ticks{grid-column:1}
  .facts{grid-template-columns:1fr;gap:2px}.facts dd{margin-bottom:10px}
  .lede{font-size:17px}
+ .verdicts li{grid-template-columns:1fr;gap:2px}
  .dgrid{--lw:66px;--tw:calc((100vw - 40px - var(--lw) - (var(--n) + 2)*var(--gap)) / var(--n));--gap:3px}
  .tile{height:30px;font-size:12.5px}
  .dtable tbody th{font-size:14px;padding-right:4px}
  .dtable .states th{font-size:11.5px}.dtable .states th span{font-size:10.5px}
  .sublabel .long{display:none}.sublabel .short{display:inline}
- .dcheck .summary{margin-left:0}
  .nav .label,.nav .hint{display:none}
  .seg button{padding:6px 11px}
 }
