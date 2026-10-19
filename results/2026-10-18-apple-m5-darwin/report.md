@@ -99,6 +99,16 @@ tsgo, tsc-ts, tsc-rs, tsrs, bun; checkers without a documented thread flag are n
 | tsrs | 1.68 (1.67–1.71) | 3.3× | 0.87 (0.83–0.94) ¹ | 4.9× | 1.43 (1.42–1.67) ¹ | 5.4× |
 | bun | 1.37 (1.33–1.39) | 4.0× | 1.26 (1.23–1.30) | 3.4× | 2.50 (2.49–2.84) | 3.1× |
 
+## Work per project
+
+tsgo's own counts of the work in one check (`--extendedDiagnostics --singleThreaded`, not timed), from `work/`. Files and lines include `node_modules` and lib files. Parse and check times are from that one single-threaded run. A project's check time depends far more on how many types it makes the checker create than on its file count. Counts can vary very slightly between runs. Recorded on 2026-10-19, after this run, on the same machine with the same tsgo binary (sha256 a82f731365ad…) and project commits as the timed runs. These counts depend on the binary and the code, not on timing conditions, though they are not exactly repeatable: in repeated checks, type-fest's varied by under 0.01% and the other projects' not at all.
+
+| Project | Files in program | Lines | Types | Instantiations | Parse s | Check s |
+|---|---|---|---|---|---|---|
+| type-fest | 593 | 0.1 M | 5.9 M | 17.8 M | 0.1 | 13.7 |
+| Outline | 7,783 | 1.4 M | 0.6 M | 5.8 M | 1.6 | 7.3 |
+| VS Code | 11,500 | 4.0 M | 3.3 M | 4.2 M | 3.5 | 20.0 |
+
 ## Cold check
 
 Normal environment vs fresh empty HOME, TMPDIR, XDG_CACHE_HOME, 3 runs each.

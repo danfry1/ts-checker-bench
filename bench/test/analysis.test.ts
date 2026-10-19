@@ -77,3 +77,8 @@ test("file lists accept Windows paths and line endings", () => {
 	const text = "C:\\x\\tools\\tsgo\\node_modules\\@typescript\\typescript-win32-x64\\lib\\lib.es5.d.ts\r\nC:\\x\\projects\\outline\\app\\index.tsx\r\n";
 	assert.deepEqual(a.normalizeFileList(text, "outline"), ["LIB/lib.es5.d.ts", "app/index.tsx"]);
 });
+
+test("tsc's extended diagnostics parse to numbers", () => {
+	const text = "Files:               593\nLines:            109590\nTypes:           5897031\nInstantiations: 17803065\nMemory used:    5521375K\nCheck time:      13.763s\n";
+	assert.deepEqual(a.parseWorkStats(text), { Files: 593, Lines: 109590, Types: 5897031, Instantiations: 17803065, "Memory used": 5521375, "Check time": 13.763 });
+});

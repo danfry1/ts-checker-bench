@@ -4,7 +4,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { RESULTS_DIR, ROOT, checkers as configured, projects as configuredProjects } from "./config.ts";
-import { type Summary, countFiles, lineDiff, maskElapsed, normalizeDiagnostics, normalizeFileList, parseBunTiming, ratio, summarize } from "./analysis.ts";
+import { type Summary, countFiles, lineDiff, maskElapsed, normalizeDiagnostics, normalizeFileList, parseBunTiming, parseWorkStats, ratio, summarize } from "./analysis.ts";
 import { COLOURS, raceSvg } from "./race.ts";
 import { type Gate, type Run, gateOutcome, listRuns, loadRun } from "./results.ts";
 
@@ -210,6 +210,7 @@ function reportMarkdown(run: Run): string {
 		out.push(`## ${n === 1 ? "Single-threaded" : `${n} threads`}`, "", `${threaded.join(", ")}; checkers without a documented thread flag are not included.`, "", ...(n === 1 ? raceImages(run, "-single-threaded", "") : []), timingTable(run, "matched", n, threaded, ref), "");
 	}
 
+	out.push(...workTable(run));
 	out.push("## Cold check", "", `Normal environment vs fresh empty ${m.coldCheckVariables.join(", ")}, 3 runs each.`, "", "| Checker | " + projects.map(p => `${p} normal | ${p} fresh`).join(" | ") + " |", "|---|" + projects.map(() => "---|---|").join(""));
 	for (const c of checkers) {
 		const span = (p: string, phase: string) => {
@@ -250,6 +251,34 @@ function reportMarkdown(run: Run): string {
 }
 
 // ---------------------------------------------------------------------------- race animation
+
+const millions = (n: number) => `${(n / 1e6).toFixed(1)} M`;
+const workStats = (run: Run, project: string) => {
+	const text = run.read("work", `${project}.txt`);
+	return text === null ? null : parseWorkStats(text);
+};
+
+/** The reference's own counts of the work in each project, from work/ (absent in runs before it was recorded). */
+function workTable(run: Run): string[] {
+	const ref = referenceName(run);
+	const rows = benchmarked(run).flatMap(p => {
+		const s = workStats(run, p);
+		return s ? [`| ${projectTitle(p)} | ${s.Files?.toLocaleString("en-US") ?? "–"} | ${s.Lines ? millions(s.Lines) : "–"} | ${s.Types ? millions(s.Types) : "–"} | ${s.Instantiations ? millions(s.Instantiations) : "–"} | ${s["Parse time"]?.toFixed(1) ?? "–"} | ${s["Check time"]?.toFixed(1) ?? "–"} |`] : [];
+	});
+	if (!rows.length) return [];
+	const note = run.read("work", "NOTE.md");
+	const flags = configured.find(c => c.name === ref)?.workStats?.join(" ") ?? "";
+	return [
+		"## Work per project",
+		"",
+		`${ref}'s own counts of the work in one check (\`${flags}\`, not timed), from \`work/\`. Files and lines include \`node_modules\` and lib files. Parse and check times are from that one single-threaded run. A project's check time depends far more on how many types it makes the checker create than on its file count. Counts can vary very slightly between runs.${note ? ` ${note.trim()}` : ""}`,
+		"",
+		"| Project | Files in program | Lines | Types | Instantiations | Parse s | Check s |",
+		"|---|---|---|---|---|---|---|",
+		...rows,
+		"",
+	];
+}
 
 /** The race charts: default threading, and single-threaded where the checkers document a flag. */
 const RACES = [
@@ -298,7 +327,11 @@ function races(run: Run): Map<string, string> {
 	const out = new Map<string, string>();
 	for (const p of benchmarked(run)) {
 		const refFiles = files(run, p).find(f => f.checker === ref);
-		const size = refFiles?.kind === "list" ? `${refFiles.project.toLocaleString("en-US")} project files · ` : "";
+		const stats = workStats(run, p);
+		const size = [
+			...(refFiles?.kind === "list" ? [`${refFiles.project.toLocaleString("en-US")} project files`] : []),
+			...(stats?.Types && stats.Instantiations ? [`${ref} creates ${millions(stats.Types)} types and ${millions(stats.Instantiations)} instantiations`] : []),
+		].join(" · ");
 		for (const race of RACES) {
 			const lanes = names.flatMap(c => {
 				const s = stat(run, p, race.phase, c, race.threads);
@@ -309,7 +342,7 @@ function races(run: Run): Map<string, string> {
 			if (lanes.length < 2) continue;
 			out.set(raceFile(p, race.suffix), raceSvg({
 				project: `${projectTitle(p)}, ${race.label}`,
-				subtitle: `${size}cold full type check in real time · ${m.machine.cpu}, ${m.machine.os} · median of ${m.iterations} runs`,
+				subtitles: [...(size ? [size] : []), `Cold full type check in real time · ${m.machine.cpu}, ${m.machine.os} · median of ${m.iterations} runs`],
 				ratioHeading: `vs ${ref}`,
 				lanes,
 				footnotes: [...diagnosticsLines(run, p), `"vs ${ref}": ${ref}'s median divided by the checker's. +n / −m: diagnostics only in the checker / only in ${ref}.`],

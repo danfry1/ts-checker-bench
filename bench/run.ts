@@ -168,6 +168,11 @@ function gate(rec: Recorder, p: Project): boolean {
 	return outcome === "passed";
 }
 
+/** The reference's own counts of the work in checking the project (types, instantiations), untimed. */
+function work(rec: Recorder, p: Project): void {
+	if (reference.workStats) rec.write(`work/${p.name}.txt`, runChecker(reference, p, reference.workStats).output, p);
+}
+
 function fileLists(rec: Recorder, p: Project): void {
 	for (const c of runnable()) rec.write(`files/${p.name}/${c.name}.txt`, runChecker(c, p, c.fileList.args).output, p);
 }
@@ -222,6 +227,7 @@ function measureAll(rec: Recorder, pl: Plan): void {
 	recordHelp(rec);
 	for (const p of pl.projects) {
 		if (!gate(rec, p)) continue;
+		work(rec, p);
 		fileLists(rec, p);
 		diagnostics(rec, p);
 		coldCheck(rec, p);

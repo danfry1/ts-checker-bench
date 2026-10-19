@@ -22,6 +22,8 @@ export interface Checker {
 	fileList: { args: string[]; format: "list" | "bun-timing" };
 	/** Flags for one thread and for n threads ("{n}" is replaced); null if undocumented. */
 	threads: { one: string[]; n: string[] } | null;
+	/** Reference only: flags for its own counts of the work in a check (types, instantiations). */
+	workStats?: string[];
 	/** "reference": what the others are compared with. "explain": diagnostics only, never timed. */
 	role?: "reference" | "explain";
 }

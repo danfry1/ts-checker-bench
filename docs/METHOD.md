@@ -10,11 +10,12 @@ What a run measures, how, and what it does not show. The numbers are in each run
 2. **Records the setup.** It writes the machine, macOS and Node versions, each checker's package, `--version` output and native binary sha256, and tool-related environment variables to `run.json`. Each checker's `--help` output goes to `help/`.
 3. **For each project:**
    1. **Gate.** The reference checker (tsgo 7.0.2) runs the project's own typecheck command. A project with any error is recorded as rejected and not benchmarked. If the reference exits non-zero without reporting an error (killed, out of memory, crashed), the project is recorded as not measured instead, since that says nothing about the project (`gate/`).
-   2. **File lists.** Each timed checker reports the files in its program (`files/`).
-   3. **Diagnostics.** Every checker, plus the explain-only checker, runs twice on the clean checkout and twice with `fixtures/patches/<project>.patch` applied. The checkout is restored with `git checkout` afterwards (`parity/`).
-   4. **Cold check.** Each timed checker runs 3 times in the normal environment, alternating with 3 runs under fresh, empty `HOME`, `TMPDIR` and `XDG_CACHE_HOME`. Any file written to those directories is recorded.
-   5. **Default threading.** 1 warm-up round, then 7 rounds. Each round runs every timed checker once, in a fixed order, with no thread flag.
-   6. **Matched threads.** The same, at 1, 4 and the CPU count threads, for checkers that document a thread flag (all five).
+   2. **Work counts.** The reference runs once more with `--extendedDiagnostics --singleThreaded`, untimed, and reports how many files, lines, types and instantiations the check involves (`work/`).
+   3. **File lists.** Each timed checker reports the files in its program (`files/`).
+   4. **Diagnostics.** Every checker, plus the explain-only checker, runs twice on the clean checkout and twice with `fixtures/patches/<project>.patch` applied. The checkout is restored with `git checkout` afterwards (`parity/`).
+   5. **Cold check.** Each timed checker runs 3 times in the normal environment, alternating with 3 runs under fresh, empty `HOME`, `TMPDIR` and `XDG_CACHE_HOME`. Any file written to those directories is recorded.
+   6. **Default threading.** 1 warm-up round, then 7 rounds. Each round runs every timed checker once, in a fixed order, with no thread flag.
+   7. **Matched threads.** The same, at 1, 4 and the CPU count threads, for checkers that document a thread flag (all five).
 4. **Records the conditions.** It writes the end time, load average, power state, and every sleep, wake, thermal or power event `pmset` logged during the run.
 5. **Reports.** It writes `report.md` and the README results block.
 
@@ -79,6 +80,8 @@ tsgo, tsc-ts, tsc-rs and tsrs print their program's files with `--listFilesOnly`
 ## Projects
 
 A project is included only if it is a real codebase checked with its own command, and if tsgo 7.0.2 reports 0 errors on it. Each is pinned to a commit and installed with its own lockfile and package manager ([`projects.json`](../projects.json)). No project file or tsconfig is ever edited, apart from the temporary error patches.
+
+The projects differ in kind as well as size, and file count is a poor guide to how long a check takes. type-fest has 502 project files and Outline 2,315, yet tsgo takes longer on type-fest, because type-fest is a type-level library whose tests make the checker create far more types: in run `2026-10-18-apple-m5-darwin`, 5.9 M types and 17.8 M instantiations from 0.1 M lines, against Outline's 0.6 M types and 5.8 M instantiations from 1.4 M lines. Each run's report has these counts under "Work per project". type-fest therefore stresses type computation, while Outline and VS Code are typical applications of two sizes. These counts were added to that run the day after its timings were recorded (see its `work/NOTE.md`), and they vary very slightly between repeated checks.
 
 ## Caveats
 

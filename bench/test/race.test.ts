@@ -4,7 +4,7 @@ import { raceSvg } from "../race.ts";
 
 const svg = raceSvg({
 	project: "p",
-	subtitle: "Machine <x>",
+	subtitles: ["Machine <x>"],
 	ratioHeading: "vs ref",
 	lanes: [
 		{ checker: "ref", seconds: 8, ratio: "1.0×" },

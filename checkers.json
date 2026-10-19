@@ -1,5 +1,5 @@
 {
-  "$comment": "Every checker in the benchmark. To add one or change a version, edit this file and run `node bench setup`. Fields: package/version: what npm installs into tools/<name>/; binary: the native executable to run, per <platform>-<arch>, as a path under node_modules (a list means: the first that exists; a platform that is missing means the checker is not available there); args: arguments placed before the project's own; plainOutput: flags for one-line-per-error output; fileList: how to make it report the files in its program (format \"list\": one path per line; \"bun-timing\": counts only); threads: how to set a thread count ({n} is replaced), or null if the checker documents no thread flag; role: 'reference' is what every other checker is compared with, 'explain' is only used to explain diagnostic differences and is never timed. Thread flags are taken from each checker's own documentation (--help, README, or the docs its README links to) and checked against the installed binary, which rejects unknown options.",
+  "$comment": "Every checker in the benchmark. To add one or change a version, edit this file and run `node bench setup`. Fields: package/version: what npm installs into tools/<name>/; binary: the native executable to run, per <platform>-<arch>, as a path under node_modules (a list means: the first that exists; a platform that is missing means the checker is not available there); args: arguments placed before the project's own; plainOutput: flags for one-line-per-error output; fileList: how to make it report the files in its program (format \"list\": one path per line; \"bun-timing\": counts only); threads: how to set a thread count ({n} is replaced), or null if the checker documents no thread flag; workStats (reference only): flags for the checker's own counts of the work in a check, such as types and instantiations, recorded once per project and not timed; role: 'reference' is what every other checker is compared with, 'explain' is only used to explain diagnostic differences and is never timed. Thread flags are taken from each checker's own documentation (--help, README, or the docs its README links to) and checked against the installed binary, which rejects unknown options.",
   "checkers": [
     {
       "name": "tsgo",
@@ -24,6 +24,7 @@
         "one": ["--singleThreaded"],
         "n": ["--checkers", "{n}"]
       },
+      "workStats": ["--extendedDiagnostics", "--singleThreaded"],
       "role": "reference"
     },
     {

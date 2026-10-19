@@ -12,8 +12,8 @@ export interface Lane {
 
 export interface RaceData {
 	project: string;
-	/** Machine and settings, shown under the title. */
-	subtitle: string;
+	/** Lines under the title: the project, then the machine and settings. */
+	subtitles: string[];
 	/** Heading of the ratio column, e.g. "vs tsgo". */
 	ratioHeading: string;
 	lanes: Lane[];
@@ -41,7 +41,7 @@ export function raceSvg(data: RaceData): string {
 	const cycle = slowest + HOLD;
 	const css: string[] = [];
 	const body: string[] = [];
-	let y = 84;
+	let y = 66 + data.subtitles.length * 18;
 	body.push(
 		`<text class="sub" x="${TRACK_END + 16}" y="${y - 12}">median</text>`,
 		`<text class="sub" x="${WIDTH - 16}" y="${y - 12}" text-anchor="end">${escape(data.ratioHeading)}</text>`,
@@ -72,7 +72,7 @@ export function raceSvg(data: RaceData): string {
 	return [
 		`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${WIDTH} ${height}" width="${WIDTH}" height="${height}" role="img" aria-labelledby="t d">`,
 		`<title id="t">${escape(data.project)}: wall time of one full type check</title>`,
-		`<desc id="d">${escape(`${data.subtitle}. ${desc}.`)}</desc>`,
+		`<desc id="d">${escape(`${data.subtitles.join(". ")}. ${desc}.`)}</desc>`,
 		"<style>",
 		"text{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:13px;fill:#1f2328}",
 		".bg{fill:#ffffff;stroke:#d1d9e0}.track{fill:#eff2f5}",
@@ -85,7 +85,7 @@ export function raceSvg(data: RaceData): string {
 		"</style>",
 		`<rect class="bg" x="0.5" y="0.5" width="${WIDTH - 1}" height="${height - 1}" rx="6"/>`,
 		`<text class="title" x="16" y="28">${escape(data.project)}</text>`,
-		`<text class="sub" x="16" y="48">${escape(data.subtitle)}</text>`,
+		...data.subtitles.map((line, i) => `<text class="sub" x="16" y="${48 + i * 18}">${escape(line)}</text>`),
 		...body,
 		...data.footnotes.map((line, i) => `<text class="foot" x="16" y="${y + i * 18}">${escape(line)}</text>`),
 		"</svg>",

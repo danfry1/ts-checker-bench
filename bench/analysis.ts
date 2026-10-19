@@ -121,6 +121,13 @@ export function countFiles(files: string[]): { total: number; lib: number; proje
 }
 
 /** bun check --timing: "  593 files loaded in 84.5ms, 593 checked in 2100.1ms, ..." */
+/** "Name: value" lines of tsc's --extendedDiagnostics, as numbers: counts as is, times in seconds, memory in KiB. */
+export function parseWorkStats(text: string): Record<string, number> {
+	const stats: Record<string, number> = {};
+	for (const m of text.matchAll(/^([A-Za-z][A-Za-z ]*):\s+([\d.]+)(s|K)?\s*$/gm)) stats[m[1]] = Number(m[2]);
+	return stats;
+}
+
 export function parseBunTiming(text: string): { loaded: number; checked: number } | null {
 	const m = /(\d+) files loaded in [^,]+, (\d+) checked/.exec(text);
 	return m ? { loaded: Number(m[1]), checked: Number(m[2]) } : null;

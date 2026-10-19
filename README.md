@@ -116,7 +116,7 @@ Projects are added the same way, in [`projects.json`](projects.json), with the p
 | [`bench/`](bench/) | The harness (`node bench <command>`) and the report generator |
 | [`tools/`](tools/) | One pinned install per checker |
 | [`fixtures/`](fixtures/) | Error-injection patches, type-fest's lockfile, a small type-fest consumer |
-| [`results/`](results/) | One folder per run: `run.json` (machine, versions, binary hashes, conditions), `timing.csv`, diagnostics, file lists, `--help` output, `report.md` and a `race-<project>.svg` per project |
+| [`results/`](results/) | One folder per run: `run.json` (machine, versions, binary hashes, conditions), `timing.csv`, diagnostics, file lists, work counts, `--help` output, `report.md` and a `race-<project>.svg` per project |
 | [`docs/METHOD.md`](docs/METHOD.md) | Method and caveats |
 
 ## Independence

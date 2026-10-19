@@ -1,0 +1,1 @@
+Recorded on 2026-10-19, after this run, on the same machine with the same tsgo binary (sha256 a82f731365ad…) and project commits as the timed runs. These counts depend on the binary and the code, not on timing conditions, though they are not exactly repeatable: in repeated checks, type-fest's varied by under 0.01% and the other projects' not at all.
