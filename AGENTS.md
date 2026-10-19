@@ -24,7 +24,7 @@ git clone <this repository> && cd ts-checker-bench
 node bench setup            # every checker into tools/, every project into projects/
 ```
 
-`node bench setup` installs each checker from its committed lockfile and clones each project at its pinned commit. It fails loudly if a native binary is missing. If a project's install fails, remove its folder under `projects/` before running setup again; setup and preflight refuse a checkout whose install did not finish.
+`node bench setup` installs each checker from its committed lockfile and clones each project at its pinned commit. It installs each project with its own install command, untrimmed, so the disk use is what the project itself needs: most of the 10 GB is VS Code, whose install sets up the dependencies of all its built-in extensions. It fails loudly if a native binary is missing. If a project's install fails, remove its folder under `projects/` before running setup again; setup and preflight refuse a checkout whose install did not finish.
 
 ## 3. Prepare the machine
 

@@ -357,7 +357,7 @@ function methodSection(run: Run): string {
 const STEPS: [string, string, string][] = [
 	["Get the code", "Clone the repository.", "git clone {repo} && cd ts-checker-bench"],
 	["Check the harness", "Its typecheck and tests, and that the committed reports regenerate exactly.", "(cd bench && npm ci && npm run check)"],
-	["Install everything", "Every checker from its lockfile and every project at its pinned commit. About 10 GB.", "node bench setup"],
+	["Install everything", "Every checker from its lockfile, and every project at its pinned commit with its own install command. About 10 GB, most of it VS Code's own dependencies.", "node bench setup"],
 	["Check the machine", "Refuses to start on battery or with a checkout that is not ready; warns about busy processes.", "node bench preflight"],
 	["Try it end to end", "type-fest only, one round, about 6 minutes. Not published.", "node bench run --smoke"],
 	["Run the benchmark", "About 40 minutes on a 10-core Mac, longer on slower ones. Writes results/<date>-<cpu>-<os>/ with its report.", "node bench run"],
