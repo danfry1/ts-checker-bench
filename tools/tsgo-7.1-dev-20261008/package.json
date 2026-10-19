@@ -1,0 +1,8 @@
+{
+  "name": "tool-tsgo-7.1-dev-20261008",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "typescript": "7.1.0-dev.20261008.1"
+  }
+}

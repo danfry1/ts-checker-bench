@@ -1,5 +1,5 @@
 {
-  "$comment": "Every checker in the benchmark. To add one or change a version, edit this file and run `node bench setup`. Fields: package/version: what npm installs into tools/<name>/; binary: the native executable to run, per <platform>-<arch>, as a path under node_modules (a list means: the first that exists; a platform that is missing means the checker is not available there); args: arguments placed before the project's own; plainOutput: flags for one-line-per-error output; fileList: how to make it report the files in its program (format \"list\": one path per line; \"bun-timing\": counts only); threads: how to set a thread count ({n} is replaced), or null if the checker documents no thread flag; workStats (reference only): flags for the checker's own counts of the work in a check, such as types and instantiations, recorded once per project and not timed; role: 'reference' is what every other checker is compared with, 'explain' is only used to explain diagnostic differences and is never timed. Thread flags are taken from each checker's own documentation (--help, README, or the docs its README links to) and checked against the installed binary, which rejects unknown options.",
+  "$comment": "Every checker in the benchmark. To add one or change a version, edit this file and run `node bench setup`. Fields: package/version: what npm installs into tools/<name>/; binary: the native executable to run, per <platform>-<arch>, as a path under node_modules (a list means: the first that exists; a platform that is missing means the checker is not available there); args: arguments placed before the project's own; plainOutput: flags for one-line-per-error output; fileList: how to make it report the files in its program (format \"list\": one path per line; \"bun-timing\": counts only); threads: how to set a thread count ({n} is replaced), or null if the checker documents no thread flag; workStats (reference only): flags for the checker's own counts of the work in a check, such as types and instantiations, recorded once per project and not timed; defaultThreads: how many checkers or threads it uses with no thread flag, as documented: a number, or \"per-core\" for one per core (some cap it; see docs/METHOD.md); explains (explain role only): the checkers whose diagnostics it explains, being the TypeScript build they port; role: 'reference' is what every other checker is compared with, 'explain' is only used to explain diagnostic differences and is never timed. Thread flags are taken from each checker's own documentation (--help, README, or the docs its README links to) and checked against the installed binary, which rejects unknown options.",
   "checkers": [
     {
       "name": "tsgo",
@@ -20,6 +20,7 @@
         "args": ["--listFilesOnly"],
         "format": "list"
       },
+      "defaultThreads": 4,
       "threads": {
         "one": ["--singleThreaded"],
         "n": ["--checkers", "{n}"]
@@ -45,6 +46,7 @@
         "args": ["--listFilesOnly"],
         "format": "list"
       },
+      "defaultThreads": "per-core",
       "threads": {
         "one": ["--singleThreaded"],
         "n": ["--checkers", "{n}"]
@@ -69,6 +71,7 @@
         "args": ["--listFilesOnly"],
         "format": "list"
       },
+      "defaultThreads": 4,
       "threads": {
         "one": ["--singleThreaded"],
         "n": ["--checkers", "{n}"]
@@ -90,6 +93,7 @@
         "args": ["--listFilesOnly"],
         "format": "list"
       },
+      "defaultThreads": "per-core",
       "threads": {
         "one": ["--singleThreaded"],
         "n": ["--checkers", "{n}"]
@@ -114,6 +118,7 @@
         "args": ["--timing"],
         "format": "bun-timing"
       },
+      "defaultThreads": "per-core",
       "threads": {
         "one": ["--threads=1"],
         "n": ["--threads={n}"]
@@ -121,7 +126,7 @@
     },
     {
       "name": "tsgo-7.1-dev",
-      "description": "Upstream tsgo 7.1-dev, the build tsrs reports porting",
+      "description": "Upstream tsgo 7.1-dev, the npm build of the TypeScript commit tsrs 0.16.0 ports (b85298b6a81f; this build's gitHead 9adc871ff47f is one CI-only commit later)",
       "package": "typescript",
       "version": "7.1.0-dev.20260930.4",
       "binary": {
@@ -139,7 +144,31 @@
         "format": "list"
       },
       "threads": null,
-      "role": "explain"
+      "role": "explain",
+      "explains": ["tsrs"]
+    },
+    {
+      "name": "tsgo-7.1-dev-20261008",
+      "description": "Upstream tsgo 7.1-dev, the npm build of the TypeScript commit tsc-rs 0.7.0 ports (fed0bf24149f, per its UPSTREAM.md at the v0.7.0 tag)",
+      "package": "typescript",
+      "version": "7.1.0-dev.20261008.1",
+      "binary": {
+        "darwin-arm64": "@typescript/typescript-darwin-arm64/lib/tsc",
+        "darwin-x64": "@typescript/typescript-darwin-x64/lib/tsc",
+        "linux-arm64": "@typescript/typescript-linux-arm64/lib/tsc",
+        "linux-x64": "@typescript/typescript-linux-x64/lib/tsc",
+        "win32-arm64": "@typescript/typescript-win32-arm64/lib/tsc.exe",
+        "win32-x64": "@typescript/typescript-win32-x64/lib/tsc.exe"
+      },
+      "args": [],
+      "plainOutput": ["--pretty", "false"],
+      "fileList": {
+        "args": ["--listFilesOnly"],
+        "format": "list"
+      },
+      "threads": null,
+      "role": "explain",
+      "explains": ["tsc-rs"]
     }
   ]
 }

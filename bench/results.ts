@@ -50,7 +50,8 @@ export interface RunMeta {
 	/** How the machine was kept awake (caffeinate, systemd-inhibit, SetThreadExecutionState), or null if it was not. */
 	keptAwakeBy: string | null;
 	/** Checkers that publish no build for this platform have available: false and no version or hash. */
-	checkers: { name: string; package: string; role: string; available: boolean; versionOutput?: string; binarySha256?: string }[];
+	/** recordedLater: the date a checker was added to an existing run (diagnostics only), when it was. */
+	checkers: { name: string; package: string; role: string; available: boolean; versionOutput?: string; binarySha256?: string; recordedLater?: string }[];
 	projects: { name: string; repo: string; sha: string; args: string[]; argsSource: string; gate: Gate }[];
 	/** The environment variables the cold check points at fresh empty directories. */
 	coldCheckVariables: string[];

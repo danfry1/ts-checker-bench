@@ -22,6 +22,10 @@ export interface Checker {
 	fileList: { args: string[]; format: "list" | "bun-timing" };
 	/** Flags for one thread and for n threads ("{n}" is replaced); null if undocumented. */
 	threads: { one: string[]; n: string[] } | null;
+	/** Checkers or threads with no thread flag, as documented: a number, or one per core. */
+	defaultThreads?: number | "per-core";
+	/** Explain role only: the checkers whose diagnostics it explains (the TypeScript build they port). */
+	explains?: string[];
 	/** Reference only: flags for its own counts of the work in a check (types, instantiations). */
 	workStats?: string[];
 	/** "reference": what the others are compared with. "explain": diagnostics only, never timed. */

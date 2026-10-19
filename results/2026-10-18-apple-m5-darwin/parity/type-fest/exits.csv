@@ -11,6 +11,8 @@ clean,bun,1,0
 clean,bun,2,0
 clean,tsgo-7.1-dev,1,0
 clean,tsgo-7.1-dev,2,0
+clean,tsgo-7.1-dev-20261008,1,0
+clean,tsgo-7.1-dev-20261008,2,0
 broken,tsgo,1,1
 broken,tsgo,2,1
 broken,tsc-ts,1,1
@@ -23,3 +25,5 @@ broken,bun,1,1
 broken,bun,2,1
 broken,tsgo-7.1-dev,1,2
 broken,tsgo-7.1-dev,2,2
+broken,tsgo-7.1-dev-20261008,1,2
+broken,tsgo-7.1-dev-20261008,2,2

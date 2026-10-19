@@ -78,6 +78,15 @@
       "available": true,
       "versionOutput": "Version 7.1.0-dev.20260930.4",
       "binarySha256": "aa06f5318220fe61dce847ef5583f01ee17a250ca5565dbf46c259588fe97246"
+    },
+    {
+      "name": "tsgo-7.1-dev-20261008",
+      "package": "typescript@7.1.0-dev.20261008.1",
+      "role": "explain",
+      "available": true,
+      "versionOutput": "Version 7.1.0-dev.20261008.1",
+      "binarySha256": "3c61fc74c866133d6e39327bd056d78f5bfafa693decfba774a925a718fab246",
+      "recordedLater": "2026-10-19"
     }
   ],
   "projects": [
