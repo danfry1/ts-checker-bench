@@ -19,8 +19,10 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 24
       - name: GNU time (Linux timer)
@@ -41,23 +43,27 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
+          persist-credentials: false
           path: pr
           fetch-depth: 0
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
+          persist-credentials: false
           ref: ${{ github.base_ref }}
           path: base
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 24
       - run: npm ci
         working-directory: base/bench
       - name: Verify each run the pull request adds or changes
         working-directory: pr
+        env:
+          BASE_REF: ${{ github.base_ref }}
         run: |
-          runs=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD" -- results/ | awk -F/ 'NF > 2 { print $2 }' | sort -u)
+          runs=$(git diff --name-only "origin/$BASE_REF...HEAD" -- results/ | awk -F/ 'NF > 2 { print $2 }' | sort -u)
           if [ -z "$runs" ]; then echo "no runs added or changed"; exit 0; fi
           status=0
           for r in $runs; do
